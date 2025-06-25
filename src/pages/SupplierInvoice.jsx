@@ -1,50 +1,93 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { Button, Row, Col, Card, CardHeader, CardBody, Input, CardFooter } from 'reactstrap'
 import DataTable from 'react-data-table-component'
-import { Button, Row, Col, Card, CardHeader, CardBody, Input } from 'reactstrap'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import Select from 'react-select'
 
-const CustomerInvoice = () => {
+const SupplierInvoice = () => {
   const { num } = useParams()
-  const { weekData } = useAuth()
+  const { weekData, productData, registeredUsers } = useAuth()
   const sheetNames = num ? [`W${num}`] : Object.keys(weekData).filter(k => /^W\d+/.test(k))
   const [grouped, setGrouped] = useState([])
   const [searchText, setSearchText] = useState('')
-  const [selectedPemesan, setSelectedPemesan] = useState(null)
+  const [selectedSupplier, setSelectedSupplier] = useState(null)
 
   useEffect(() => {
     const raw = sheetNames.flatMap(name => weekData[name] || [])
-    const map = {}
+    const supplierMap = {}
 
     raw.forEach(row => {
-      const key = `${row.pemesan}|${row.produkLabel}|${row.keterangan}`
-      if (!map[key]) {
-        map[key] = { ...row, jumlah: Number(row.jumlah), bayar: Number(row.bayar) }
-      } else {
-        map[key].jumlah += Number(row.jumlah)
-        map[key].bayar += Number(row.bayar)
+      const produkKey = row.produkLabel
+      const pemesan = row.pemesan
+      const jumlah = Number(row.jumlah)
+
+      let found = null
+      Object.entries(productData).forEach(([user, items]) => {
+        items.forEach(item => {
+          const label = `${item.namaProduk} ${item.ukuran} ${item.satuan}`
+          if (label === produkKey && item.aktif) {
+            found = {
+              supplier: item.namaSupplier || user,
+              produk: label,
+              hpp: Number(item.hpp),
+              key: label,
+              keterangan: item.keterangan
+            }
+          }
+        })
+      })
+
+      if (!found) return
+
+      const fullKey = `${found.supplier}|${found.key}`
+
+      if (!supplierMap[fullKey]) {
+        supplierMap[fullKey] = {
+          namaSupplier: found.supplier,
+          produk: found.produk + (row.keterangan ? ` (${row.keterangan})` : ''),
+          pemesanList: {},
+          jumlah: 0,
+          hpp: found.hpp
+        }
+      }
+
+      supplierMap[fullKey].jumlah += jumlah
+      supplierMap[fullKey].pemesanList[pemesan] = (supplierMap[fullKey].pemesanList[pemesan] || 0) + jumlah
+    })
+
+    const bySupplier = {}
+
+    Object.values(supplierMap).forEach(item => {
+      const entry = {
+        ...item,
+        total: item.jumlah * item.hpp,
+        pemesanCombined: Object.entries(item.pemesanList)
+          .map(([name, qty]) => `${name}(${qty})`).join(', ')
+      }
+
+      if (!bySupplier[item.namaSupplier]) bySupplier[item.namaSupplier] = []
+      bySupplier[item.namaSupplier].push(entry)
+    })
+
+    const arr = Object.entries(bySupplier).map(([supplier, list], i) => {
+      const totalQty = list.reduce((a, b) => a + b.jumlah, 0)
+      const totalHarga = list.reduce((a, b) => a + b.total, 0)
+      return {
+        id: i + 1,
+        supplier,
+        items: list,
+        totalQty,
+        totalHarga
       }
     })
 
-    const arr = Object.values(map)
+    setGrouped(arr)
+  }, [weekData, productData, sheetNames])
 
-    const byPemesan = {}
-    arr.forEach(r => {
-      if (!byPemesan[r.pemesan]) byPemesan[r.pemesan] = []
-      byPemesan[r.pemesan].push(r)
-    })
-
-    setGrouped(Object.entries(byPemesan).map(([pemesan, list], i) => {
-      const totalQty = list.reduce((a, b) => a + b.jumlah, 0)
-      const totalHarga = list.reduce((a, b) => a + b.bayar, 0)
-      return { id: i + 1, pemesan, items: list, totalQty, totalHarga }
-    }))
-  }, [weekData, sheetNames])
-
-  const sendInvoice = (pemesan, items, weekNum) => {
+  const sendInvoice = (supplier, items, weekNum) => {
     const date = new Date()
     const todayStr = date.toISOString().split('T')[0]
     const dueDate = new Date(date)
@@ -61,7 +104,7 @@ const CustomerInvoice = () => {
 
       doc.setFontSize(26)
       doc.setFont('helvetica', 'bold')
-      const title = `Customer Invoice - ${pemesan} ${weekNum ? `Minggu ke-${weekNum}` : 'Semua Minggu'}`
+      const title = `Supplier Invoice - ${supplier} ${weekNum ? `Minggu ke-${weekNum}` : 'Semua Minggu'}`
       const wrapped = doc.splitTextToSize(title, 120)
 
       wrapped.forEach((line, i) => {
@@ -74,36 +117,35 @@ const CustomerInvoice = () => {
       doc.text(`Jatuh Tempo: ${dueStr}`, 195, 60, { align: 'right' })
 
       doc.setFont('helvetica', 'bold')
-      const totalBayar = items.reduce((a, b) => a + Number(b.bayar), 0)
+      const totalBayar = items.reduce((a, b) => a + Number(b.total), 0)
       doc.text(`Balance Due: Rp${totalBayar.toLocaleString()}`, 195, 70, { align: 'right' })
 
       doc.setFontSize(10)
       doc.text('Bazaar FRUK', 15, 50)
-
-      doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
       doc.text('Indonesia', 15, 55)
       doc.text('desofita@gmail.com', 15, 60)
 
-      doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
-      doc.text(`Untuk: ${pemesan}`, 15, 70)
+      doc.setFontSize(11)
+      doc.text(`Untuk: ${supplier}`, 15, 70)
 
       const table = []
       let totalQty = 0
 
-      table.push(['Produk', 'Jumlah', 'Harga Satuan', 'Total Bayar'])
+      table.push(['Produk', 'Pemesan', 'Jumlah', 'Harga Satuan', 'Total Bayar'])
 
       items.forEach(item => {
         const qty = Number(item.jumlah)
-        const bayar = Number(item.bayar)
-        const unit = qty > 0 ? bayar / qty : 0
+        const unit = Number(item.hpp)
+        const total = Number(item.total)
 
         table.push([
-          `${item.produkLabel}${item.catatan ? ` (${item.catatan})` : ''}`,
+          item.produk,
+          item.pemesanCombined,
           qty,
           `Rp${unit.toLocaleString()}`,
-          `Rp${bayar.toLocaleString()}`
+          `Rp${total.toLocaleString()}`
         ])
 
         totalQty += qty
@@ -111,6 +153,7 @@ const CustomerInvoice = () => {
 
       table.push([
         'TOTAL',
+        '',
         totalQty,
         '',
         `Rp${totalBayar.toLocaleString()}`
@@ -146,9 +189,17 @@ const CustomerInvoice = () => {
       doc.setFont('helvetica', 'normal')
       doc.text('Catatan:', 15, finalY + 10)
       doc.text(`Invoice untuk ${weekNum ? `minggu ke-${weekNum}` : 'semua minggu'}`, 15, finalY + 15)
-      doc.text('Pembayaran dapat dilakukan melalui :\nBCA - 6801873348\nSarifah Alia', 15, finalY + 25)
 
-      doc.save(`Customer Invoice - ${pemesan} ${weekNum ? `Minggu ke-${weekNum}` : 'Semua Minggu'}.pdf`)
+      const matchedUser = registeredUsers.find(
+        u => u.profile?.namaSupplier?.trim().toLowerCase() === supplier.trim().toLowerCase()
+      )
+      const paymentLine = matchedUser?.profile
+      ? `Pembayaran dapat dilakukan melalui:\n${matchedUser.profile.namaBank?.toUpperCase() || '-'} - ${matchedUser.profile.noRekening || '-'}\n${matchedUser.profile.namaPenerima || '-'}`
+      : 'Pembayaran dapat dilakukan melalui:\n-'
+
+      doc.text(paymentLine, 15, finalY + 25)
+
+      doc.save(`Supplier Invoice - ${supplier} ${weekNum ? `Minggu ke-${weekNum}` : 'Semua Minggu'}.pdf`)
     }
   }
 
@@ -157,58 +208,55 @@ const CustomerInvoice = () => {
     let y = 20
 
     doc.setFontSize(14)
-    doc.text(`Customer Invoice - ${num ? `Minggu ${num}` : 'Semua Minggu'}`, 14, y)
-
+    doc.text(`Supplier Invoice - ${num ? `Minggu ${num}` : 'Semua Minggu'}`, 14, y)
     y += 5
 
     const table = []
-    table.push(['No', 'Nama Pemesan', 'Produk', 'Total Jumlah Pesanan', 'Harga Satuan', 'Total Bayar Customer'])
+    table.push(['No', 'Nama Supplier', 'Produk', 'Pemesan', 'Jumlah', 'Harga Satuan', 'Total Harga'])
 
     let no = 1
     let grandTotalQty = 0
-    let grandTotalBayar = 0
+    let grandTotal = 0
 
     grouped.forEach(group => {
-      let totalQty = 0
-      let totalBayar = 0
       let firstRow = true
 
       group.items.forEach(item => {
-        const unitPrice = item.jumlah > 0 ? item.bayar / item.jumlah : 0
         table.push([
           firstRow ? no : '',
-          firstRow ? group.pemesan : '',
-          `${item.produkLabel}${item.catatan ? ` (${item.catatan})` : ''}`,
+          firstRow ? group.supplier : '',
+          item.produk,
+          item.pemesanCombined,
           item.jumlah,
-          `Rp${unitPrice.toLocaleString()}`,
-          `Rp${item.bayar.toLocaleString()}`
+          `Rp${item.hpp.toLocaleString()}`,
+          `Rp${item.total.toLocaleString()}`
         ])
         firstRow = false
-        totalQty += item.jumlah
-        totalBayar += item.bayar
       })
 
       table.push([
         '',
-        `${group.pemesan} Total`,
+        `${group.supplier} Total`,
         '',
-        totalQty,
         '',
-        `Rp${totalBayar.toLocaleString()}`
+        group.totalQty,
+        '',
+        `Rp${group.totalHarga.toLocaleString()}`
       ])
 
+      grandTotalQty += group.totalQty
+      grandTotal += group.totalHarga
       no++
-      grandTotalQty += totalQty
-      grandTotalBayar += totalBayar
     })
 
     table.push([
       '',
       'TOTAL',
       '',
+      '',
       grandTotalQty,
       '',
-      `Rp${grandTotalBayar.toLocaleString()}`
+      `Rp${grandTotal.toLocaleString()}`
     ])
 
     autoTable(doc, {
@@ -228,24 +276,19 @@ const CustomerInvoice = () => {
         fillColor: [255, 255, 255]
       },
       didParseCell: data => {
-        const cellText = data.cell.raw?.toString() || ''
-
-        if (
-          cellText.toLowerCase().includes('total') &&
-          data.row.section === 'body' &&
-          data.row.index >= 0
-        ) {
+        const txt = data.cell.raw?.toString().toLowerCase()
+        if (txt?.includes('total')) {
           data.cell.styles.fontStyle = 'bold'
-          data.cell.styles.fillColor = [224, 224, 224]
+          data.cell.styles.fillColor = [240, 240, 240]
         }
       }
     })
 
-    doc.save(`Customer-Invoice-${num ? `Minggu-${num}` : 'Semua-Minggu'}.pdf`)
+    doc.save(`Supplier-Invoice-${num ? `Minggu-${num}` : 'Semua-Minggu'}.pdf`)
   }
 
   const filteredGrouped = grouped.filter(group => {
-    const matchPemesan = selectedPemesan ? group.pemesan === selectedPemesan.value : true
+    const matchSupplier = selectedSupplier ? group.supplier === selectedSupplier.value : true
     const matchSearch = searchText
       ? group.items.some(item =>
           Object.values(item).some(val =>
@@ -254,14 +297,14 @@ const CustomerInvoice = () => {
         )
       : true
 
-    return matchPemesan && matchSearch
+    return matchSupplier && matchSearch
   })
 
   return (
     <div className="mx-5 mt-4">
       <Row className="mb-3">
         <Col md="6">
-          <h4>Customer Invoice - {num ? `Minggu ${num}` : 'Semua Minggu'}</h4>
+          <h4>Supplier Invoice - {num ? `Minggu ${num}` : 'Semua Minggu'}</h4>
         </Col>
         <Col md="6" className="text-end">
           <Button color="warning" onClick={() => window.history.back()}>
@@ -279,18 +322,18 @@ const CustomerInvoice = () => {
         </Col>
         <Col md="4">
           <Select
-            options={grouped.map(g => ({ label: g.pemesan, value: g.pemesan }))}
-            placeholder="🔽 Filter Pemesan"
+            options={grouped.map(g => ({ label: g.supplier, value: g.supplier }))}
+            placeholder="🔽 Filter Supplier"
             isClearable
             isSearchable
-            value={selectedPemesan}
-            onChange={setSelectedPemesan}
+            value={selectedSupplier}
+            onChange={setSelectedSupplier}
           />
         </Col>
         <Col md="4" className="text-end">
           <Button color="danger" onClick={() => {
             setSearchText('')
-            setSelectedPemesan(null)
+            setSelectedSupplier(null)
           }}>
             Reset Filter
           </Button>
@@ -298,41 +341,44 @@ const CustomerInvoice = () => {
       </Row>
       {filteredGrouped.map(group => (
         <Card key={group.id} className="mb-3">
-          <CardHeader>
-            <h5>{group.pemesan}</h5>
+          <CardHeader className="pt-3">
+            <h5>{group.supplier}</h5>
           </CardHeader>
           <CardBody className="p-0">
             <DataTable
               columns={[
-                { name: 'Produk', selector: row => `${row.produkLabel}${row.catatan ? ` (${row.catatan})` : ''}`, wrap: true },
-                { name: 'Jumlah', selector: row => row.jumlah },
-                { name: 'Harga Satuan', selector: row => `Rp${(row.bayar / row.jumlah).toLocaleString()}` },
-                { name: 'Total Bayar', selector: row => `Rp${row.bayar.toLocaleString()}` }
+                { name: 'Produk', selector: r => r.produk, wrap: true },
+                { name: 'Pemesan', selector: r => r.pemesanCombined, wrap: true },
+                { name: 'Jumlah', selector: r => r.jumlah },
+                { name: 'Harga Satuan', selector: r => `Rp${r.hpp.toLocaleString()}` },
+                { name: 'Total Harga', selector: r => `Rp${r.total.toLocaleString()}` }
               ]}
               data={group.items}
               pagination
               highlightOnHover
               responsive
             />
-            <Row className="p-3">
+          </CardBody>
+          <CardFooter className="py-3">
+            <Row>
               <Col md="6" className="text-start">
                 <strong>Total Qty:</strong> {group.totalQty} &nbsp; | &nbsp;
                 <strong>Total:</strong> Rp{group.totalHarga.toLocaleString()}
               </Col>
               <Col md="6" className="text-end">
-                <Button color="primary" size="sm" onClick={() => sendInvoice(group.pemesan, group.items, num)}>
-                  Generate Invoice {group.pemesan}
+                <Button color="primary" size="sm" onClick={() => sendInvoice(group.supplier, group.items, num)}>
+                  Generate Invoice {group.supplier}
                 </Button>
               </Col>
             </Row>
-          </CardBody>
+          </CardFooter>
         </Card>
       ))}
 
       {grouped.length > 0 && (
-        <div className="text-end mb-5">
-          <Button
-            color="success"
+        <div className="text-end">
+          <Button 
+            color="success" 
             onClick={() => generateInvoiceSheet()}
           >
             Generate All Invoice
@@ -343,4 +389,4 @@ const CustomerInvoice = () => {
   )
 }
 
-export default CustomerInvoice
+export default SupplierInvoice

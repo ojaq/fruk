@@ -1,0 +1,200 @@
+import React, { useState, useEffect } from 'react'
+import { Navbar, NavbarBrand, Nav, NavItem, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Button, Modal, ModalHeader, ModalBody, ModalFooter, Row, Col, Label, Input } from 'reactstrap'
+import { useAuth } from '../context/AuthContext'
+import { useLocation, useNavigate } from 'react-router-dom'
+import Swal from 'sweetalert2'
+
+const NavbarComponent = () => {
+  const { user, logout, toggleRole, profile, saveProfile, registeredUsers, profileModalOpen, toggleProfileModal } = useAuth()
+  const [form, setForm] = useState({
+    namaSupplier: '',
+    namaBank: '',
+    namaPenerima: '',
+    noRekening: ''
+  })
+  const [errors, setErrors] = useState({})
+  const refs = {
+    namaSupplier: React.useRef(),
+    namaBank: React.useRef(),
+    namaPenerima: React.useRef(),
+    noRekening: React.useRef()
+  }
+
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const toggleDropdown = () => setDropdownOpen(!dropdownOpen)
+
+  useEffect(() => {
+    if (user?.role === 'supplier') {
+      setForm(prev => ({
+        namaSupplier: prev.namaSupplier || user.profile.namaSupplier || user.name,
+        namaBank: prev.namaBank || user.profile.namaBank || '',
+        namaPenerima: prev.namaPenerima || user.profile.namaPenerima || user.name,
+        noRekening: prev.noRekening || user.profile.noRekening || ''
+      }))
+    }
+  }, [profile, user])
+
+  const handleSave = () => {
+    if (user?.role !== 'supplier') return
+
+    const { namaSupplier, namaBank, namaPenerima, noRekening } = form
+    const newErrors = {}
+
+    if (!namaSupplier.trim()) {
+      newErrors.namaSupplier = 'Nama supplier wajib diisi'
+    } else {
+      const isTaken = registeredUsers.some(
+        (u) => u.role === 'supplier' && u.name !== user.name && u.profile?.namaSupplier === namaSupplier
+      )
+      if (isTaken) newErrors.namaSupplier = 'Nama supplier sudah dipakai'
+    }
+
+    if (!namaBank.trim()) newErrors.namaBank = 'Nama bank wajib diisi'
+    if (!namaPenerima.trim()) newErrors.namaPenerima = 'Nama penerima wajib diisi'
+    if (!noRekening.trim()) newErrors.noRekening = 'No rekening wajib diisi'
+
+    setErrors(newErrors)
+
+    const firstErrorField = Object.keys(newErrors)[0]
+    if (firstErrorField) {
+      refs[firstErrorField]?.current?.focus()
+      return
+    }
+
+    const updatedUsers = registeredUsers.map(u => {
+      if (u.name === user.name) {
+        return { ...u, profile: { namaSupplier, namaBank, namaPenerima, noRekening } }
+      }
+      return u
+    })
+
+    localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers))
+    localStorage.setItem('currentUser', JSON.stringify({ ...user, profile: { namaSupplier, namaBank, namaPenerima, noRekening } }))
+
+    Swal.fire('Berhasil', 'Profil berhasil disimpan', 'success')
+
+    saveProfile({ namaSupplier, namaBank, namaPenerima, noRekening })
+    toggleProfileModal()
+  }
+
+  if (location.pathname === '/login' || location.pathname === '/register') return null
+
+  return (
+    <>
+      <Navbar color="light" light expand="md" className="px-4 shadow-sm justify-content-between">
+        <NavbarBrand onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
+          🛍️ FRUK
+        </NavbarBrand>
+
+        <Nav navbar className="ms-auto">
+          <NavItem>
+            <Dropdown isOpen={dropdownOpen} toggle={toggleDropdown}>
+              <DropdownToggle caret color="primary">
+                {user?.name} ({user?.role})
+              </DropdownToggle>
+              <DropdownMenu end>
+                <DropdownItem onClick={toggleRole}>
+                  Ganti ke {user?.role === 'admin' ? 'Supplier' : 'Admin'}
+                </DropdownItem>
+                {user?.role === 'supplier' && (
+                  <DropdownItem onClick={toggleProfileModal}>
+                    Edit Profil
+                  </DropdownItem>
+                )}
+                <DropdownItem divider />
+                <DropdownItem onClick={() => {
+                  logout()
+                  navigate('/login')
+                }}>
+                  Logout
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </NavItem>
+        </Nav>
+      </Navbar>
+
+      {/* Modal */}
+      <Modal isOpen={profileModalOpen} toggle={toggleProfileModal} centered size="lg">
+        <ModalBody>
+          <Row>
+            <Col md="12" className="mb-3">
+              <Label>Nama Supplier</Label>
+              <Input
+                innerRef={refs.namaSupplier}
+                invalid={!!errors.namaSupplier}
+                value={form.namaSupplier || ''}
+                onChange={e => {
+                  const val = e.target.value
+                  setForm({ ...form, namaSupplier: val })
+                  if (errors.namaSupplier && val.trim()) {
+                    setErrors(prev => ({ ...prev, namaSupplier: undefined }))
+                  }
+                }}
+              />
+              {errors.namaSupplier && <div className="text-danger small">{errors.namaSupplier}</div>}
+            </Col>
+            <Col md="12" className="mb-3">
+              <Label>Nama Bank</Label>
+              <Input
+                innerRef={refs.namaBank}
+                invalid={!!errors.namaBank}
+                value={form.namaBank || ''}
+                onChange={e => {
+                  const val = e.target.value
+                  setForm({ ...form, namaBank: val })
+                  if (errors.namaBank && val.trim()) {
+                    setErrors(prev => ({ ...prev, namaBank: undefined }))
+                  }
+                }}
+              />
+              {errors.namaBank && <div className="text-danger small">{errors.namaBank}</div>}
+            </Col>
+            <Col md="12" className="mb-3">
+              <Label>Nama Penerima</Label>
+              <Input
+                innerRef={refs.namaPenerima}
+                invalid={!!errors.namaPenerima}
+                value={form.namaPenerima || ''}
+                onChange={e => {
+                  const val = e.target.value
+                  setForm({ ...form, namaPenerima: val })
+                  if (errors.namaPenerima && val.trim()) {
+                    setErrors(prev => ({ ...prev, namaPenerima: undefined }))
+                  }
+                }}
+              />
+              {errors.namaPenerima && <div className="text-danger small">{errors.namaPenerima}</div>}
+            </Col>
+            <Col md="12">
+              <Label>No Rekening</Label>
+              <Input
+                type="number"
+                innerRef={refs.noRekening}
+                invalid={!!errors.noRekening}
+                value={form.noRekening || ''}
+                onChange={e => {
+                  const val = e.target.value
+                  setForm({ ...form, noRekening: val })
+                  if (errors.noRekening && val.trim()) {
+                    setErrors(prev => ({ ...prev, noRekening: undefined }))
+                  }
+                }}
+              />
+              {errors.noRekening && <div className="text-danger small">{errors.noRekening}</div>}
+            </Col>
+          </Row>
+        </ModalBody>
+
+        <ModalFooter>
+          <Button color="primary" onClick={handleSave} disabled={user?.role !== 'supplier'}>Simpan</Button>
+          <Button color="secondary" onClick={toggleProfileModal}>Batal</Button>
+        </ModalFooter>
+      </Modal>
+    </>
+  )
+}
+
+export default NavbarComponent
