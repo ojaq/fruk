@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { supabase } from '../supabaseClient'
+import Swal from 'sweetalert2'
 
 const AuthContext = createContext()
 export const useAuth = () => useContext(AuthContext)
@@ -15,40 +17,124 @@ export const AuthProvider = ({ children }) => {
 
   const toggleProfileModal = () => setProfileModalOpen(prev => !prev)
 
-  useEffect(() => {
-    const storedUsers = localStorage.getItem('registeredUsers')
-    if (storedUsers) setRegisteredUsers(JSON.parse(storedUsers))
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('name')
 
-    const storedUser = localStorage.getItem('currentUser')
-    if (storedUser) setUser(JSON.parse(storedUser))
+      if (error) {
+        console.error('Error fetching users:', error)
+        Swal.fire('Error', 'Gagal mengambil data pengguna', 'error')
+        return
+      }
 
-    const storedWeek = localStorage.getItem('weekData')
-    if (storedWeek) setWeekData(JSON.parse(storedWeek))
-
-    const data = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
-    setUserList(data)
-
-    setLoading(false)
-  }, [])
-
-  const saveUsers = (users) => {
-    setRegisteredUsers(users)
-    localStorage.setItem('registeredUsers', JSON.stringify(users))
+      setRegisteredUsers(data || [])
+      setUserList(data || [])
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      Swal.fire('Error', 'Gagal mengambil data pengguna', 'error')
+    }
   }
 
-  const register = (name, role) => {
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+
+      if (error) {
+        console.error('Error fetching products:', error)
+        Swal.fire('Error', 'Gagal mengambil data produk', 'error')
+        return
+      }
+
+      const transformed = {}
+      data?.forEach(item => {
+        if (!transformed[item.owner]) {
+          transformed[item.owner] = []
+        }
+        transformed[item.owner].push(item.data)
+      })
+
+      setProductData(transformed)
+    } catch (error) {
+      console.error('Error fetching products:', error)
+      Swal.fire('Error', 'Gagal mengambil data produk', 'error')
+    }
+  }
+
+  const fetchWeeks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('weeks')
+        .select('*')
+
+      if (error) {
+        console.error('Error fetching weeks:', error)
+        Swal.fire('Error', 'Gagal mengambil data minggu', 'error')
+        return
+      }
+
+      const transformed = {}
+      data?.forEach(item => {
+        transformed[item.week_id] = item.entries
+      })
+
+      setWeekData(transformed)
+    } catch (error) {
+      console.error('Error fetching weeks:', error)
+      Swal.fire('Error', 'Gagal mengambil data minggu', 'error')
+    }
+  }
+
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        await Promise.all([
+          fetchUsers(),
+          fetchProducts(),
+          fetchWeeks()
+        ])
+
+        const storedUser = localStorage.getItem('currentUser')
+        if (storedUser) setUser(JSON.parse(storedUser))
+
+        setLoading(false)
+      } catch (error) {
+        console.error('Error initializing data:', error)
+        setLoading(false)
+      }
+    }
+    
+    initializeData()
+  }, [])
+
+  const register = async (name, role) => {
     const exists = registeredUsers.some((u) => u.name === name)
     if (exists) throw new Error('Nama sudah terdaftar')
 
-    const updated = [...registeredUsers, { name, role, requestedAdmin: false }]
-    saveUsers(updated)
+    try {
+      const { error } = await supabase
+        .from('users')
+        .insert([{ name, role, requested_admin: 'false' }])
+
+      if (error) throw new Error(error.message)
+
+      await fetchUsers()
+      Swal.fire('Berhasil', 'Pengguna berhasil didaftarkan', 'success')
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error')
+      throw new Error(error.message)
+    }
   }
 
   const login = (name) => {
     const found = registeredUsers.find((u) => u.name === name)
     if (!found) throw new Error('Pengguna tidak ditemukan')
 
-    const updatedUser = { ...found, profile: found.profile || {}, requestedAdmin: found.requestedAdmin || false }
+    const updatedUser = { ...found, profile: found.profile || {}, requestedAdmin: found.requested_admin || false }
     setUser(updatedUser)
     localStorage.setItem('currentUser', JSON.stringify(updatedUser))
   }
@@ -58,71 +144,158 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('currentUser')
   }
 
-  const applyAsAdmin = () => {
+  const applyAsAdmin = async () => {
     if (!user || user.role !== 'supplier') return
 
-    const updatedUsers = registeredUsers.map(u =>
-      u.name === user.name ? { ...u, requestedAdmin: true } : u
-    )
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ requested_admin: 'true' })
+        .eq('name', user.name)
 
-    saveUsers(updatedUsers)
+      if (error) {
+        console.error('Error updating admin request:', error)
+        Swal.fire('Error', 'Gagal mengajukan sebagai admin', 'error')
+        return
+      }
 
-    const updatedUser = { ...user, requestedAdmin: true }
-    setUser(updatedUser)
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser))
+      const updatedUser = { ...user, requestedAdmin: true }
+      setUser(updatedUser)
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser))
+
+      await fetchUsers()
+      Swal.fire('Berhasil', 'Pengajuan admin berhasil dikirim', 'success')
+    } catch (error) {
+      console.error('Error applying as admin:', error)
+      Swal.fire('Error', 'Gagal mengajukan sebagai admin', 'error')
+    }
   }
 
   const saveProfile = (newProfile) => {
     setProfile(newProfile)
   }
 
-  useEffect(() => {
-    const storedData = localStorage.getItem('supplierProductData')
-    if (storedData) setProductData(JSON.parse(storedData))
-  }, [])
+  const saveProductData = async (name, data) => {
+    try {
+      const { error: deleteError } = await supabase
+        .from('products')
+        .delete()
+        .eq('owner', name)
 
-  const saveProductData = (name, data) => {
-    const updated = { ...productData, [name]: data }
-    setProductData(updated)
-    localStorage.setItem('supplierProductData', JSON.stringify(updated))
-  }
+      if (deleteError) {
+        console.error('Error deleting products:', deleteError)
+        Swal.fire('Error', 'Gagal menyimpan data produk', 'error')
+        return
+      }
 
-  const saveWeekData = (sheetName, newSheetData) => {
-    const existing = JSON.parse(localStorage.getItem('weekData')) || {}
-    const updated = { ...existing, [sheetName]: newSheetData }
-    setWeekData(updated)
-    localStorage.setItem('weekData', JSON.stringify(updated))
-  }
+      if (data.length > 0) {
+        const productsToInsert = data.map(item => ({
+          owner: name,
+          data: item
+        }))
 
-  const handleAdminDecision = (name, accepted) => {
-    const updatedUsers = registeredUsers.map(u => {
-      if (u.name === name) {
-        if (accepted) {
-          return { ...u, role: 'admin', requestedAdmin: false }
-        } else {
-          return { ...u, requestedAdmin: 'rejected' }
+        const { error: insertError } = await supabase
+          .from('products')
+          .insert(productsToInsert)
+
+        if (insertError) {
+          console.error('Error inserting products:', insertError)
+          Swal.fire('Error', 'Gagal menyimpan data produk', 'error')
+          return
         }
       }
-      return u
-    })
 
-    saveUsers(updatedUsers)
-
-    if (user?.name === name) {
-      const updatedCurrent = updatedUsers.find(u => u.name === name)
-      setUser(updatedCurrent)
-      localStorage.setItem('currentUser', JSON.stringify(updatedCurrent))
+      const updated = { ...productData, [name]: data }
+      setProductData(updated)
+      Swal.fire('Berhasil', 'Data produk berhasil disimpan', 'success')
+    } catch (error) {
+      console.error('Error saving product data:', error)
+      Swal.fire('Error', 'Gagal menyimpan data produk', 'error')
     }
   }
 
-  const cancelAdminRequest = () => {
-    const updatedUsers = registeredUsers.map(u =>
-      u.name === user.name ? { ...u, requestedAdmin: false } : u
-    )
-    saveUsers(updatedUsers)
-    const updatedCurrent = { ...user, requestedAdmin: false }
-    setUser(updatedCurrent)
-    localStorage.setItem('currentUser', JSON.stringify(updatedCurrent))
+  const saveWeekData = async (sheetName, newSheetData) => {
+    try {
+      const { error } = await supabase
+        .from('weeks')
+        .upsert([{ week_id: sheetName, entries: newSheetData }])
+
+      if (error) {
+        console.error('Error saving week data:', error)
+        Swal.fire('Error', 'Gagal menyimpan data minggu', 'error')
+        return
+      }
+
+      const existing = { ...weekData }
+      const updated = { ...existing, [sheetName]: newSheetData }
+      setWeekData(updated)
+    } catch (error) {
+      console.error('Error saving week data:', error)
+      Swal.fire('Error', 'Gagal menyimpan data minggu', 'error')
+    }
+  }
+
+  const handleAdminDecision = async (name, accepted) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          role: accepted ? 'admin' : 'supplier',
+          requested_admin: accepted ? 'false' : 'rejected'
+        })
+        .eq('name', name)
+
+      if (error) {
+        console.error('Error updating admin decision:', error)
+        Swal.fire('Error', 'Gagal memproses keputusan admin', 'error')
+        return
+      }
+
+      await fetchUsers()
+
+      if (user?.name === name) {
+        const updatedCurrent = registeredUsers.find(u => u.name === name)
+        if (updatedCurrent) {
+          const updatedUser = { 
+            ...updatedCurrent, 
+            role: accepted ? 'admin' : 'supplier',
+            requestedAdmin: accepted ? false : 'rejected'
+          }
+          setUser(updatedUser)
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser))
+        }
+      }
+
+      Swal.fire('Berhasil', `Pengajuan admin ${accepted ? 'diterima' : 'ditolak'}`, 'success')
+    } catch (error) {
+      console.error('Error handling admin decision:', error)
+      Swal.fire('Error', 'Gagal memproses keputusan admin', 'error')
+    }
+  }
+
+  const cancelAdminRequest = async () => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ requested_admin: 'false' })
+        .eq('name', user.name)
+
+      if (error) {
+        console.error('Error canceling admin request:', error)
+        Swal.fire('Error', 'Gagal membatalkan pengajuan admin', 'error')
+        return
+      }
+
+      const updatedCurrent = { ...user, requestedAdmin: false }
+      setUser(updatedCurrent)
+      localStorage.setItem('currentUser', JSON.stringify(updatedCurrent))
+
+      await fetchUsers()
+      Swal.fire('Berhasil', 'Pengajuan admin berhasil dibatalkan', 'success')
+    } catch (error) {
+      console.error('Error canceling admin request:', error)
+      Swal.fire('Error', 'Gagal membatalkan pengajuan admin', 'error')
+    }
   }
 
   return (

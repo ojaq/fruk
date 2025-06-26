@@ -20,11 +20,11 @@ const Week = () => {
   const [produkOptions, setProdukOptions] = useState([])
   const [searchText, setSearchText] = useState('')
   const [selectedPemesan, setSelectedPemesan] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('weekData')) || {}
-    setData(stored[sheetName] || [])
-  }, [sheetName])
+    setData(weekData[sheetName] || [])
+  }, [weekData, sheetName])
 
   useEffect(() => {
     const all = []
@@ -52,6 +52,7 @@ const Week = () => {
       bayar: f.jumlah ? Number(f.jumlah) * Number(harga) : ''
     }))
   }
+
   const handleJumlahChange = val => {
     const jumlah = Number(val)
     setForm(f => ({
@@ -61,32 +62,46 @@ const Week = () => {
     }))
   }
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault()
-    const { pemesan, produk, jumlah } = form
-    if (!pemesan || !produk || !jumlah) {
-      return Swal.fire('Gagal','Semua field * wajib diisi','error')
+    setLoading(true)
+    
+    try {
+      const { pemesan, produk, jumlah } = form
+      if (!pemesan || !produk || !jumlah) {
+        Swal.fire('Gagal','Semua field * wajib diisi','error')
+        return
+      }
+
+      const entry = {
+        pemesan,
+        produkLabel: produk.label,
+        catatan: form.catatan,
+        jumlah,
+        bayar: form.bayar,
+        namaSupplier: produk.data.namaSupplier
+      }
+
+      const updated = [...data]
+      if (editIndex !== null) {
+        updated[editIndex] = entry
+        await saveWeekData(sheetName, updated)
+        Swal.fire('Berhasil','Data diperbarui','success')
+      } else {
+        updated.push(entry)
+        await saveWeekData(sheetName, updated)
+        Swal.fire('Berhasil','Data ditambahkan','success')
+      }
+
+      setData(updated)
+      setForm({ pemesan:'', produk:null, catatan:'', jumlah:'', bayar:'' })
+      setEditIndex(null)
+    } catch (error) {
+      console.error('Error saving week data:', error)
+      Swal.fire('Error','Gagal menyimpan data','error')
+    } finally {
+      setLoading(false)
     }
-    const entry = {
-      pemesan,
-      produkLabel: produk.label,
-      catatan: form.catatan,
-      jumlah,
-      bayar: form.bayar,
-      namaSupplier: produk.data.namaSupplier
-    }
-    const updated = [...data]
-    if (editIndex !== null) {
-      updated[editIndex] = entry
-      Swal.fire('Berhasil','Data diperbarui','success')
-    } else {
-      updated.push(entry)
-      Swal.fire('Berhasil','Data ditambahkan','success')
-    }
-    setData(updated)
-    saveWeekData(sheetName, updated)
-    setForm({ pemesan:'', produk:null, catatan:'', jumlah:'', bayar:'' })
-    setEditIndex(null)
   }
 
   const handleEdit = (row,i) => {
@@ -101,20 +116,30 @@ const Week = () => {
     setEditIndex(i)
   }
 
-  const handleDelete = index => {
-    Swal.fire({
+  const handleDelete = async index => {
+    const result = await Swal.fire({
       title: `Hapus baris ke-${index+1}?`,
       text: 'Anda akan menghapus data ini.',
       icon:'warning',
       showCancelButton:true,
       confirmButtonText:'Hapus'
-    }).then(res => {
-      if (!res.isConfirmed) return
-      const updated = [...data]; updated.splice(index,1)
-      setData(updated)
-      saveWeekData(sheetName, updated)
-      Swal.fire('Dihapus!','Data berhasil dihapus.','success')
     })
+
+    if (!result.isConfirmed) return
+
+    setLoading(true)
+    try {
+      const updated = [...data]
+      updated.splice(index,1)
+      await saveWeekData(sheetName, updated)
+      setData(updated)
+      Swal.fire('Dihapus!','Data berhasil dihapus.','success')
+    } catch (error) {
+      console.error('Error deleting week data:', error)
+      Swal.fire('Error','Gagal menghapus data','error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const columns = [
@@ -128,8 +153,12 @@ const Week = () => {
       name:'Aksi',
       cell:(r,i)=>(
         <>
-          <Button size="sm" color="warning" className="me-2" onClick={()=>handleEdit(r,i)}> <Edit size={14}/> </Button>
-          <Button size="sm" color="danger" onClick={()=>handleDelete(i)}> <Trash2 size={14}/> </Button>
+          <Button size="sm" color="warning" className="me-2" onClick={()=>handleEdit(r,i)} disabled={loading}> 
+            <Edit size={14}/> 
+          </Button>
+          <Button size="sm" color="danger" onClick={()=>handleDelete(i)} disabled={loading}> 
+            <Trash2 size={14}/> 
+          </Button>
         </>
       )
     }
@@ -142,7 +171,6 @@ const Week = () => {
     const matchPemesan = selectedPemesan ? row.pemesan === selectedPemesan.value : true
     return matchSearch && matchPemesan
   })
-
 
   const uniquePemesanOptions = [...new Set(data.map(d => d.pemesan))].map(p => ({
     label: p,
@@ -169,6 +197,7 @@ const Week = () => {
               <Input
                 value={form.pemesan}
                 onChange={e=>setForm(f=>({...f,pemesan:e.target.value}))}
+                disabled={loading}
               />
             </FormGroup>
           </Col>
@@ -181,6 +210,7 @@ const Week = () => {
                 onChange={handleSelectProduk}
                 placeholder="🔽 Pilih produk"
                 isSearchable
+                isDisabled={loading}
               />
               {form.produk?.data?.keterangan && (
                 <small className="text-muted">
@@ -195,6 +225,7 @@ const Week = () => {
               <Input
                 value={form.catatan}
                 onChange={e => setForm(f => ({ ...f, catatan: e.target.value }))}
+                disabled={loading}
               />
             </FormGroup>
           </Col>
@@ -205,13 +236,14 @@ const Week = () => {
                 type="number"
                 value={form.jumlah}
                 onChange={e=>handleJumlahChange(e.target.value)}
+                disabled={loading}
               />
             </FormGroup>
           </Col>
           <Col md="2">
             <FormGroup>
               <Label>Total Bayar</Label>
-              <Input readOnly value={form.bayar?`Rp${Number(form.bayar).toLocaleString()}`:''} />
+              <Input readOnly value={form.bayar?`Rp${Number(form.bayar).toLocaleString()}`:''} disabled={loading} />
             </FormGroup>
           </Col>
         </Row>
@@ -221,6 +253,7 @@ const Week = () => {
               placeholder="🔍 Cari apa aja..."
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
+              disabled={loading}
             />
           </Col>
           <Col md="4">
@@ -231,17 +264,18 @@ const Week = () => {
               placeholder="🔽 Filter pemesan"
               value={selectedPemesan}
               onChange={setSelectedPemesan}
+              isDisabled={loading}
             />
           </Col>
           <Col md="4" className="text-end">
             <Button color="danger" className="me-3" onClick={() => {
               setSearchText('')
               setSelectedPemesan(null)
-            }}>
+            }} disabled={loading}>
               Reset Filter
             </Button>
-            <Button type="submit" color="primary">
-              {editIndex!==null?'Update':'Tambah'}
+            <Button type="submit" color="primary" disabled={loading}>
+              {loading ? 'Loading...' : (editIndex!==null?'Update':'Tambah')}
             </Button>
           </Col>
         </Row>
@@ -255,6 +289,7 @@ const Week = () => {
           noDataComponent="Belum ada data"
           highlightOnHover
           responsive
+          progressPending={loading}
         />
       </div>
     </div>

@@ -2,24 +2,33 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button, Input, Label, Form, FormGroup, FormFeedback, Card, CardBody, CardTitle, Container, Row, Col } from 'reactstrap'
+import Swal from 'sweetalert2'
 
 const Login = () => {
   const { login, userList } = useAuth()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    if (!name.trim()) {
-      setError('Nama wajib diisi')
-      return
-    }
+    setLoading(true)
+
     try {
+      if (!name.trim()) {
+        setError('Nama wajib diisi')
+        return
+      }
+
       login(name.trim())
+      Swal.fire('Berhasil', 'Login berhasil!', 'success')
       navigate('/dashboard')
     } catch (err) {
       setError(err.message)
+      Swal.fire('Error', err.message, 'error')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -39,6 +48,7 @@ const Login = () => {
                     invalid={!!error}
                     placeholder="Masukkan nama"
                     list="name-suggestions"
+                    disabled={loading}
                   />
                   <datalist id="name-suggestions">
                     {userList.map((user, i) => (
@@ -47,7 +57,9 @@ const Login = () => {
                   </datalist>
                   {error && <FormFeedback>{error}</FormFeedback>}
                 </FormGroup>
-                <Button color="primary" type="submit" block>Masuk</Button>
+                <Button color="primary" type="submit" block disabled={loading}>
+                  {loading ? 'Loading...' : 'Masuk'}
+                </Button>
               </Form>
               <div className="text-center mt-3">
                 Belum punya akun? <Link to="/register">Daftar di sini</Link>

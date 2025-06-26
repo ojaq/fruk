@@ -21,6 +21,7 @@ const DataSupplier = () => {
   const [data, setData] = useState([])
   const [editIndex, setEditIndex] = useState(null)
   const [searchText, setSearchText] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (username && productData[username]) {
@@ -28,50 +29,60 @@ const DataSupplier = () => {
     }
   }, [username, productData])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    const { namaProduk, jenisProduk, ukuran, satuan, hpp, hjk } = form
+    setLoading(true)
 
-    if (!namaProduk || !jenisProduk || !ukuran || !satuan || !hpp || !hjk) {
-      Swal.fire('Error', 'Field tidak boleh kosong!', 'error')
-      return
+    try {
+      const { namaProduk, jenisProduk, ukuran, satuan, hpp, hjk } = form
+
+      if (!namaProduk || !jenisProduk || !ukuran || !satuan || !hpp || !hjk) {
+        Swal.fire('Error', 'Field tidak boleh kosong!', 'error')
+        return
+      }
+
+      const profileDefaults = {
+        namaSupplier: user?.profile?.namaSupplier || '',
+        namaBank: user?.profile?.namaBank || '',
+        namaPenerima: user?.profile?.namaPenerima || '',
+        noRekening: user?.profile?.noRekening || ''
+      }
+
+      const newItem = {
+        ...form,
+        aktif: true,
+        ...profileDefaults
+      }
+
+      const updated = [...data]
+      if (editIndex !== null) {
+        updated[editIndex] = { ...newItem }
+        await saveProductData(username, updated)
+        Swal.fire('Berhasil', 'Data berhasil diubah', 'success')
+      } else {
+        updated.push(newItem)
+        await saveProductData(username, updated)
+        Swal.fire('Berhasil', 'Data berhasil ditambahkan', 'success')
+      }
+
+      setData(updated)
+
+      setForm({
+        namaProduk: '',
+        jenisProduk: '',
+        ukuran: '',
+        satuan: '',
+        hpp: '',
+        hjk: '',
+        keterangan: ''
+      })
+      setEditIndex(null)
+    } catch (error) {
+      console.error('Error saving product:', error)
+      Swal.fire('Error', 'Gagal menyimpan data', 'error')
+    } finally {
+      setLoading(false)
     }
-
-    const profileDefaults = {
-      namaSupplier: user?.profile?.namaSupplier || '',
-      namaBank: user?.profile?.namaBank || '',
-      namaPenerima: user?.profile?.namaPenerima || '',
-      noRekening: user?.profile?.noRekening || ''
-    }
-
-    const newItem = {
-      ...form,
-      aktif: true,
-      ...profileDefaults
-    }
-
-    const updated = [...data]
-    if (editIndex !== null) {
-      updated[editIndex] = { ...newItem }
-      Swal.fire('Berhasil', 'Data berhasil diubah', 'success')
-    } else {
-      updated.push(newItem)
-      Swal.fire('Berhasil', 'Data berhasil ditambahkan', 'success')
-    }
-
-    setData(updated)
-    saveProductData(username, updated)
-
-    setForm({
-      namaProduk: '',
-      jenisProduk: '',
-      ukuran: '',
-      satuan: '',
-      hpp: '',
-      hjk: '',
-      keterangan: ''
-    })
-    setEditIndex(null)
   }
 
   const handleEdit = (row, index) => {
@@ -79,39 +90,64 @@ const DataSupplier = () => {
     setEditIndex(index)
   }
 
-  const handleDelete = (index) => {
+  const handleDelete = async (index) => {
     const selected = data[index]
 
-    Swal.fire({
+    const result = await Swal.fire({
       title: `Yakin ingin hapus produk "${selected.namaProduk}"?`,
       text: 'Data ini akan dihapus secara permanen.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Hapus',
       cancelButtonText: 'Batal'
-    }).then((res) => {
-      if (res.isConfirmed) {
-        const updated = [...data]
-        updated.splice(index, 1)
-        setData(updated)
-        saveProductData(username, updated)
-        Swal.fire('Dihapus!', `Produk "${selected.namaProduk}" berhasil dihapus.`, 'success')
-      }
     })
+
+    if (!result.isConfirmed) return
+
+    setLoading(true)
+    try {
+      const updated = [...data]
+      updated.splice(index, 1)
+      await saveProductData(username, updated)
+      setData(updated)
+      Swal.fire('Dihapus!', `Produk "${selected.namaProduk}" berhasil dihapus.`, 'success')
+    } catch (error) {
+      console.error('Error deleting product:', error)
+      Swal.fire('Error', 'Gagal menghapus produk', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const toggleAktif = (index) => {
-    const updated = [...data]
-    updated[index].aktif = !updated[index].aktif
-    setData(updated)
-    saveProductData(username, updated)
+  const toggleAktif = async (index) => {
+    setLoading(true)
+    try {
+      const updated = [...data]
+      updated[index].aktif = !updated[index].aktif
+      await saveProductData(username, updated)
+      setData(updated)
+      Swal.fire('Berhasil', `Produk berhasil di-${updated[index].aktif ? 'aktifkan' : 'nonaktifkan'}`, 'success')
+    } catch (error) {
+      console.error('Error toggling product status:', error)
+      Swal.fire('Error', 'Gagal mengubah status produk', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const toggleAllAktif = (status) => {
-    const updated = data.map(item => ({ ...item, aktif: status }))
-    setData(updated)
-    saveProductData(username, updated)
-    Swal.fire('Berhasil', `Semua produk berhasil di-${status ? 'aktifkan' : 'nonaktifkan'}`, 'success')
+  const toggleAllAktif = async (status) => {
+    setLoading(true)
+    try {
+      const updated = data.map(item => ({ ...item, aktif: status }))
+      await saveProductData(username, updated)
+      setData(updated)
+      Swal.fire('Berhasil', `Semua produk berhasil di-${status ? 'aktifkan' : 'nonaktifkan'}`, 'success')
+    } catch (error) {
+      console.error('Error toggling all products:', error)
+      Swal.fire('Error', 'Gagal mengubah status semua produk', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const columns = [
@@ -165,7 +201,7 @@ const DataSupplier = () => {
     {
       name: 'Aktif?',
       cell: (row, i) => (
-        <Button color="link" onClick={() => toggleAktif(i)}>
+        <Button color="link" onClick={() => toggleAktif(i)} disabled={loading}>
           {row.aktif ? <ToggleRight color="green" /> : <ToggleLeft color="gray" />}
         </Button>
       )
@@ -174,10 +210,10 @@ const DataSupplier = () => {
       name: 'Aksi',
       cell: (row, i) => (
         <>
-          <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)}>
+          <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
             <Edit size={14} />
           </Button>
-          <Button size="sm" color="danger" onClick={() => handleDelete(i)}>
+          <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
             <Trash2 size={14} />
           </Button>
         </>
@@ -199,43 +235,74 @@ const DataSupplier = () => {
           <Col md="3">
             <FormGroup>
               <Label>Nama Produk *</Label>
-              <Input value={form.namaProduk} onChange={(e) => setForm({ ...form, namaProduk: e.target.value })} />
+              <Input 
+                value={form.namaProduk} 
+                onChange={(e) => setForm({ ...form, namaProduk: e.target.value })} 
+                disabled={loading}
+              />
             </FormGroup>
           </Col>
           <Col md="2">
             <FormGroup>
               <Label>Jenis Produk *</Label>
-              <Input value={form.jenisProduk} onChange={(e) => setForm({ ...form, jenisProduk: e.target.value })} />
+              <Input 
+                value={form.jenisProduk} 
+                onChange={(e) => setForm({ ...form, jenisProduk: e.target.value })} 
+                disabled={loading}
+              />
             </FormGroup>
           </Col>
           <Col md="1">
             <FormGroup>
               <Label>Ukuran *</Label>
-              <Input type="number" value={form.ukuran} onChange={(e) => setForm({ ...form, ukuran: e.target.value })} />
+              <Input 
+                type="number" 
+                value={form.ukuran} 
+                onChange={(e) => setForm({ ...form, ukuran: e.target.value })} 
+                disabled={loading}
+              />
             </FormGroup>
           </Col>
           <Col md="1">
             <FormGroup>
               <Label>Satuan *</Label>
-              <Input value={form.satuan} onChange={(e) => setForm({ ...form, satuan: e.target.value })} />
+              <Input 
+                value={form.satuan} 
+                onChange={(e) => setForm({ ...form, satuan: e.target.value })} 
+                disabled={loading}
+              />
             </FormGroup>
           </Col>
           <Col md="1">
             <FormGroup>
               <Label>HPP *</Label>
-              <Input type="number" value={form.hpp} onChange={(e) => setForm({ ...form, hpp: e.target.value })} />
+              <Input 
+                type="number" 
+                value={form.hpp} 
+                onChange={(e) => setForm({ ...form, hpp: e.target.value })} 
+                disabled={loading}
+              />
             </FormGroup>
           </Col>
           <Col md="1">
             <FormGroup>
               <Label>HJK *</Label>
-              <Input type="number" value={form.hjk} onChange={(e) => setForm({ ...form, hjk: e.target.value })} />
+              <Input 
+                type="number" 
+                value={form.hjk} 
+                onChange={(e) => setForm({ ...form, hjk: e.target.value })} 
+                disabled={loading}
+              />
             </FormGroup>
           </Col>
           <Col md="3">
             <FormGroup>
               <Label>Keterangan</Label>
-              <Input value={form.keterangan} onChange={(e) => setForm({ ...form, keterangan: e.target.value })} />
+              <Input 
+                value={form.keterangan} 
+                onChange={(e) => setForm({ ...form, keterangan: e.target.value })} 
+                disabled={loading}
+              />
             </FormGroup>
           </Col>
         </Row>
@@ -245,19 +312,20 @@ const DataSupplier = () => {
               placeholder="🔍 Cari produk..."
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
+              disabled={loading}
             />
           </Col>
           <Col md="6" className="text-end">
-            <Button type="submit" color="primary" className="me-2">
-              {editIndex !== null ? 'Update' : 'Tambah'}
+            <Button type="submit" color="primary" className="me-2" disabled={loading}>
+              {loading ? 'Loading...' : (editIndex !== null ? 'Update' : 'Tambah')}
             </Button>
-            <Button color="success" className="me-2" onClick={() => toggleAllAktif(true)}>
+            <Button color="success" className="me-2" onClick={() => toggleAllAktif(true)} disabled={loading}>
               Aktifkan Semua
             </Button>
-            <Button color="danger" className="me-2" onClick={() => toggleAllAktif(false)}>
+            <Button color="danger" className="me-2" onClick={() => toggleAllAktif(false)} disabled={loading}>
               Nonaktifkan Semua
             </Button>
-            <Button color="warning" onClick={() => window.history.back()}>
+            <Button color="warning" onClick={() => window.history.back()} disabled={loading}>
               Kembali
             </Button>
           </Col>
@@ -272,6 +340,7 @@ const DataSupplier = () => {
           noDataComponent="Belum ada data"
           responsive
           highlightOnHover
+          progressPending={loading}
         />
       </div>
     </div>

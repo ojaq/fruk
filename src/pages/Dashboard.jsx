@@ -7,7 +7,11 @@ const Dashboard = () => {
   const navigate = useNavigate()
   const { user, applyAsAdmin, logout, profile, toggleProfileModal, registeredUsers, handleAdminDecision, cancelAdminRequest } = useAuth()
   const [isProfileEmpty, setIsProfileEmpty] = useState(false)
-  const [adminView, setAdminView] = useState(true)
+  
+  const [adminView, setAdminView] = useState(() => {
+    return localStorage.getItem('adminView') === 'false' ? false : true
+  })
+
   const [currentWeek, setCurrentWeek] = useState(() => {
     return Number(localStorage.getItem('currentWeek')) || 1
   })
@@ -61,11 +65,11 @@ const Dashboard = () => {
       {user.role === 'superadmin' && (
         <>
           <h5 className="mt-4">Permintaan Admin Baru</h5>
-          {registeredUsers.filter(u => u.requestedAdmin && u.role === 'supplier').length === 0 ? (
+          {registeredUsers.filter(u => u.requested_admin === 'true' && u.role === 'supplier').length === 0 ? (
             <p className="text-muted">Tidak ada permintaan saat ini.</p>
           ) : (
             registeredUsers
-              .filter(u => u.role === 'supplier' && u.requestedAdmin === true)
+              .filter(u => u.role === 'supplier' && u.requested_admin === 'true')
               .map((u, idx) => (
                 <div key={idx} className="mb-2 d-flex align-items-center justify-content-between border p-2 rounded">
                   <div>
@@ -244,7 +248,16 @@ const Dashboard = () => {
 
         {user.role === 'admin' && (
           <>
-            <Button color="secondary" onClick={() => setAdminView(prev => !prev)} className="me-3">
+            <Button
+              color="secondary"
+              onClick={() => {
+                setAdminView(prev => {
+                  localStorage.setItem('adminView', String(!prev))
+                  return !prev
+                })
+              }}
+              className="me-3"
+            >
               Pindah ke Tampilan {adminView ? 'Supplier' : 'Admin'}
             </Button>
           </>

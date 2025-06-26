@@ -3,9 +3,10 @@ import { Navbar, NavbarBrand, Nav, NavItem, Dropdown, DropdownToggle, DropdownMe
 import { useAuth } from '../context/AuthContext'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Swal from 'sweetalert2'
+import { supabase } from '../supabaseClient'
 
 const NavbarComponent = () => {
-  const { user, logout, toggleRole, profile, saveProfile, registeredUsers, profileModalOpen, toggleProfileModal } = useAuth()
+  const { user, logout, profile, saveProfile, registeredUsers, profileModalOpen, toggleProfileModal } = useAuth()
   const [form, setForm] = useState({
     namaSupplier: '',
     namaBank: '',
@@ -26,17 +27,17 @@ const NavbarComponent = () => {
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen)
 
   useEffect(() => {
-    if (user?.role === 'supplier') {
-      setForm(prev => ({
-        namaSupplier: prev.namaSupplier || user.profile.namaSupplier || user.name,
-        namaBank: prev.namaBank || user.profile.namaBank || '',
-        namaPenerima: prev.namaPenerima || user.profile.namaPenerima || user.name,
-        noRekening: prev.noRekening || user.profile.noRekening || ''
-      }))
-    }
+    if (!user) return
+
+    setForm(prev => ({
+      namaSupplier: prev.namaSupplier || user.profile?.namaSupplier || user.name,
+      namaBank: prev.namaBank || user.profile?.namaBank || '',
+      namaPenerima: prev.namaPenerima || user.profile?.namaPenerima || user.name,
+      noRekening: prev.noRekening || user.profile?.noRekening || ''
+    }))
   }, [profile, user])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (user?.role !== 'supplier') return
 
     const { namaSupplier, namaBank, namaPenerima, noRekening } = form
@@ -63,20 +64,31 @@ const NavbarComponent = () => {
       return
     }
 
-    const updatedUsers = registeredUsers.map(u => {
-      if (u.name === user.name) {
-        return { ...u, profile: { namaSupplier, namaBank, namaPenerima, noRekening } }
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          profile: { namaSupplier, namaBank, namaPenerima, noRekening } 
+        })
+        .eq('name', user.name)
+
+      if (error) {
+        console.error('Error updating profile:', error)
+        Swal.fire('Error', 'Gagal menyimpan profil', 'error')
+        return
       }
-      return u
-    })
 
-    localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers))
-    localStorage.setItem('currentUser', JSON.stringify({ ...user, profile: { namaSupplier, namaBank, namaPenerima, noRekening } }))
+      const updatedUser = { ...user, profile: { namaSupplier, namaBank, namaPenerima, noRekening } }
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser))
 
-    Swal.fire('Berhasil', 'Profil berhasil disimpan', 'success')
+      Swal.fire('Berhasil', 'Profil berhasil disimpan', 'success')
 
-    saveProfile({ namaSupplier, namaBank, namaPenerima, noRekening })
-    toggleProfileModal()
+      saveProfile({ namaSupplier, namaBank, namaPenerima, noRekening })
+      toggleProfileModal()
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      Swal.fire('Error', 'Gagal menyimpan profil', 'error')
+    }
   }
 
   if (location.pathname === '/login' || location.pathname === '/register') return null
@@ -95,15 +107,14 @@ const NavbarComponent = () => {
                 {user?.name} ({user?.role})
               </DropdownToggle>
               <DropdownMenu end>
-                <DropdownItem onClick={toggleRole}>
-                  Ganti ke {user?.role === 'admin' ? 'Supplier' : 'Admin'}
-                </DropdownItem>
                 {user?.role === 'supplier' && (
-                  <DropdownItem onClick={toggleProfileModal}>
-                    Edit Profil
-                  </DropdownItem>
+                  <>
+                    <DropdownItem onClick={toggleProfileModal}>
+                      Edit Profil
+                    </DropdownItem>
+                    <DropdownItem divider />
+                  </>
                 )}
-                <DropdownItem divider />
                 <DropdownItem onClick={() => {
                   logout()
                   navigate('/login')
