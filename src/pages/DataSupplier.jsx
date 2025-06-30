@@ -29,7 +29,7 @@ const DataSupplier = () => {
   const [searchText, setSearchText] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const data = productData[username] || []
+  const data = (productData[username] || []).slice().sort((a, b) => (a.namaProduk || '').toLowerCase().localeCompare((b.namaProduk || '').toLowerCase()))
 
   const handleSubmit = async (e) => {
     e.preventDefault()

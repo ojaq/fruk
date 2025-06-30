@@ -37,8 +37,12 @@ const Dashboard = () => {
     }
   }
 
-  const handleWeek = () => {
+  const handleWeekly = () => {
     navigate(`/week/${currentWeek}`)
+  }
+
+  const handleWeek = () => {
+    navigate(`/week`)
   }
 
   const handleWeeklyCustomerInvoice = () => {
@@ -164,7 +168,7 @@ const Dashboard = () => {
                   }}
                 />
               </InputGroup>
-              <Button color="primary" size="sm" className="ms-2" onClick={handleWeek}>
+              <Button color="primary" size="sm" className="ms-2" onClick={handleWeekly}>
                 Week {currentWeek}
               </Button>
             </li>
@@ -176,6 +180,11 @@ const Dashboard = () => {
             <li className="mb-2">Lihat invoice mingguan di <strong>Supplier Invoice</strong>. &nbsp;
               <Button color="primary" size="sm" className="ms-2" onClick={handleWeeklySupplierInvoice}>
                 Supplier Invoice Week {currentWeek}
+              </Button>
+            </li>
+            <li className="mb-2">Atur data dan masuk ke seluruh minggu: &nbsp;
+              <Button color="primary" size="sm" className="ms-2" onClick={handleWeek}>
+                All Week
               </Button>
             </li>
             <li className="mb-2">Lihat semua invoice dari semua minggu di <strong>All Customer Invoice</strong>.

@@ -44,14 +44,13 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/week/:num"
+        path="/week/:num?"
         element={
           <PrivateRoutes>
             <Week />
           </PrivateRoutes>
         }
       />
-  
       <Route
         path="/customer-invoice/:num?"
         element={

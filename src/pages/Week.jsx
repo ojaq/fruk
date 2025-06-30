@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Col, Collapse, Form, FormGroup, Input, Label, Row } from 'reactstrap'
+import { Button, Col, Form, FormGroup, Input, Label, Row } from 'reactstrap'
 import DataTable from 'react-data-table-component'
 import { Edit, Trash2 } from 'react-feather'
 import Select from 'react-select'
@@ -13,7 +13,7 @@ const Week = () => {
   const sheetName  = `W${num}`
 
   const [form, setForm] = useState({
-    pemesan: '', produk: null, catatan: '', jumlah: '', bayar: ''
+    pemesan: '', produkLabel: null, catatan: '', jumlah: '', bayar: ''
   })
   const [data, setData] = useState([])
   const [editIndex, setEditIndex] = useState(null)
@@ -22,9 +22,22 @@ const Week = () => {
   const [selectedPemesan, setSelectedPemesan] = useState(null)
   const [loading, setLoading] = useState(false)
 
+  const isAllWeek = !num
+  const allWeekEntries = isAllWeek
+    ? Object.keys(weekData)
+        .filter(k => /^W\d+/.test(k))
+        .flatMap(k => weekData[k] || [])
+    : []
+
   useEffect(() => {
-    setData(weekData[sheetName] || [])
-  }, [weekData, sheetName])
+    if (isAllWeek) {
+      const sorted = (allWeekEntries || []).slice().sort((a, b) => (a.pemesan || '').toLowerCase().localeCompare((b.pemesan || '').toLowerCase()))
+      setData(sorted)
+    } else {
+      const sorted = (weekData[sheetName] || []).slice().sort((a, b) => (a.pemesan || '').toLowerCase().localeCompare((b.pemesan || '').toLowerCase()))
+      setData(sorted)
+    }
+  }, [weekData, sheetName, isAllWeek])
 
   useEffect(() => {
     const all = []
@@ -48,7 +61,7 @@ const Week = () => {
     const harga = option.data.hjk
     setForm(f => ({
       ...f,
-      produk: option,
+      produkLabel: option,
       bayar: f.jumlah ? Number(f.jumlah) * Number(harga) : ''
     }))
   }
@@ -94,7 +107,7 @@ const Week = () => {
       }
 
       setData(updated)
-      setForm({ pemesan:'', produk:null, catatan:'', jumlah:'', bayar:'' })
+      setForm({ pemesan:'', produkLabel:null, catatan:'', jumlah:'', bayar:'' })
       setEditIndex(null)
     } catch (error) {
       console.error('Error saving week data:', error)
@@ -108,7 +121,7 @@ const Week = () => {
     const opt = produkOptions.find(o=>o.label===row.produkLabel)
     setForm({
       pemesan: row.pemesan,
-      produk: opt,
+      produkLabel: opt,
       catatan: row.catatan,
       jumlah: row.jumlah,
       bayar: row.bayar
@@ -146,7 +159,7 @@ const Week = () => {
     { name:'No', selector:(r,i)=>i+1, width:'60px' },
     { name:'Pemesan', selector:r=>r.pemesan, wrap:true },
     { name:'Produk', selector:r=>r.produkLabel, wrap:true },
-    { name:'Catatan', selector:r=>r.catatan, wrap:true  },
+    { name:'Catatan', selector:r=>r.catatan || "-", wrap:true  },
     { name:'Jumlah', selector:r=>r.jumlah },
     { 
       name:'Total Bayar', 
@@ -187,7 +200,7 @@ const Week = () => {
     <div className="mt-4 mx-5">
       <Row className="mb-2">
         <Col md="6">
-          <h4>Minggu {num}</h4>
+          <h4>{isAllWeek ? 'Semua Minggu' : `Minggu ${num}`}</h4>
         </Col>
         <Col md="6" className="text-end">
           <Button color="warning" onClick={() => window.history.back()}>
@@ -203,7 +216,7 @@ const Week = () => {
               <Input
                 value={form.pemesan}
                 onChange={e=>setForm(f=>({...f,pemesan:e.target.value}))}
-                disabled={loading}
+                disabled={loading || isAllWeek}
               />
             </FormGroup>
           </Col>
@@ -212,15 +225,15 @@ const Week = () => {
               <Label>Produk *</Label>
               <Select
                 options={produkOptions}
-                value={form.produk}
+                value={form.produkLabel}
                 onChange={handleSelectProduk}
                 placeholder="🔽 Pilih produk"
                 isSearchable
-                isDisabled={loading}
+                isDisabled={loading || isAllWeek}
               />
-              {form.produk?.data?.keterangan && (
+              {form.produkLabel?.data?.keterangan && (
                 <small className="text-muted">
-                  Keterangan: {form.produk.data.keterangan}
+                  Keterangan: {form.produkLabel.data.keterangan}
                 </small>
               )}
             </FormGroup>
@@ -231,7 +244,7 @@ const Week = () => {
               <Input
                 value={form.catatan}
                 onChange={e => setForm(f => ({ ...f, catatan: e.target.value }))}
-                disabled={loading}
+                disabled={loading || isAllWeek}
               />
             </FormGroup>
           </Col>
@@ -242,7 +255,7 @@ const Week = () => {
                 type="number"
                 value={form.jumlah}
                 onChange={e=>handleJumlahChange(e.target.value)}
-                disabled={loading}
+                disabled={loading || isAllWeek}
               />
             </FormGroup>
           </Col>
@@ -256,7 +269,7 @@ const Week = () => {
                     ? `Rp${parseFloat(form.bayar).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
                     : ''
                 } 
-                disabled={loading} 
+                disabled={loading || isAllWeek}
               />
             </FormGroup>
           </Col>
@@ -288,13 +301,12 @@ const Week = () => {
             }} disabled={loading}>
               Reset Filter
             </Button>
-            <Button type="submit" color="primary" disabled={loading}>
+            <Button type="submit" color="primary" disabled={loading || isAllWeek}>
               {loading ? 'Loading...' : (editIndex!==null?'Update':'Tambah')}
             </Button>
           </Col>
         </Row>
       </Form>
-
       <div className="border">
         <DataTable
           columns={columns}
