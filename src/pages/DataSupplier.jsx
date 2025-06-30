@@ -19,24 +19,17 @@ const DataSupplier = () => {
     keterangan: ''
   })
 
-  // Use target user from URL, fallback to current user
   const username = targetUser || user?.name || ''
   const targetUserData = registeredUsers.find(u => u.name === username)
   
-  // Check if current user can edit this data
   const canEdit = user?.role === 'admin' || user?.role === 'superadmin' || username === user?.name
   const isViewingOwnData = username === user?.name
   
-  const [data, setData] = useState([])
   const [editIndex, setEditIndex] = useState(null)
   const [searchText, setSearchText] = useState('')
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (username && productData[username]) {
-      setData(productData[username])
-    }
-  }, [username, productData])
+  const data = productData[username] || []
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -50,7 +43,6 @@ const DataSupplier = () => {
         return
       }
 
-      // Use target user's profile data if available, otherwise use current user's
       const profileDefaults = {
         namaSupplier: targetUserData?.profile?.namaSupplier || user?.profile?.namaSupplier || '',
         namaBank: targetUserData?.profile?.namaBank || user?.profile?.namaBank || '',
@@ -74,8 +66,6 @@ const DataSupplier = () => {
         await saveProductData(username, updated)
         Swal.fire('Berhasil', 'Data berhasil ditambahkan', 'success')
       }
-
-      setData(updated)
 
       setForm({
         namaProduk: '',
@@ -101,7 +91,13 @@ const DataSupplier = () => {
   }
 
   const handleDelete = async (index) => {
-    const selected = data[index]
+    const filteredData = data.filter(item =>
+      Object.values(item).some(val =>
+        String(val).toLowerCase().includes(searchText.toLowerCase())
+      )
+    )
+    
+    const selected = filteredData[index]
 
     const result = await Swal.fire({
       title: `Yakin ingin hapus produk "${selected.namaProduk}"?`,
@@ -116,10 +112,21 @@ const DataSupplier = () => {
 
     setLoading(true)
     try {
+      const actualIndex = data.findIndex(item => 
+        item.namaProduk === selected.namaProduk &&
+        item.jenisProduk === selected.jenisProduk &&
+        item.ukuran === selected.ukuran &&
+        item.satuan === selected.satuan
+      )
+      
+      if (actualIndex === -1) {
+        Swal.fire('Error', 'Data tidak ditemukan', 'error')
+        return
+      }
+
       const updated = [...data]
-      updated.splice(index, 1)
+      updated.splice(actualIndex, 1)
       await saveProductData(username, updated)
-      setData(updated)
       Swal.fire('Dihapus!', `Produk "${selected.namaProduk}" berhasil dihapus.`, 'success')
     } catch (error) {
       console.error('Error deleting product:', error)
@@ -135,7 +142,6 @@ const DataSupplier = () => {
       const updated = [...data]
       updated[index].aktif = !updated[index].aktif
       await saveProductData(username, updated)
-      setData(updated)
       Swal.fire('Berhasil', `Produk berhasil di-${updated[index].aktif ? 'aktifkan' : 'nonaktifkan'}`, 'success')
     } catch (error) {
       console.error('Error toggling product status:', error)
@@ -150,7 +156,6 @@ const DataSupplier = () => {
     try {
       const updated = data.map(item => ({ ...item, aktif: status }))
       await saveProductData(username, updated)
-      setData(updated)
       Swal.fire('Berhasil', `Semua produk berhasil di-${status ? 'aktifkan' : 'nonaktifkan'}`, 'success')
     } catch (error) {
       console.error('Error toggling all products:', error)
