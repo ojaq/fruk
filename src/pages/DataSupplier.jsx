@@ -4,9 +4,11 @@ import Swal from 'sweetalert2'
 import DataTable from 'react-data-table-component'
 import { Edit, Trash2, ToggleRight, ToggleLeft } from 'react-feather'
 import { useAuth } from '../context/AuthContext'
+import { useParams } from 'react-router-dom'
 
 const DataSupplier = () => {
-  const { user, productData, saveProductData } = useAuth()
+  const { user, productData, saveProductData, registeredUsers } = useAuth()
+  const { user: targetUser } = useParams()
   const [form, setForm] = useState({
     namaProduk: '',
     jenisProduk: '',
@@ -17,7 +19,14 @@ const DataSupplier = () => {
     keterangan: ''
   })
 
-  const username = user?.name || ''
+  // Use target user from URL, fallback to current user
+  const username = targetUser || user?.name || ''
+  const targetUserData = registeredUsers.find(u => u.name === username)
+  
+  // Check if current user can edit this data
+  const canEdit = user?.role === 'admin' || user?.role === 'superadmin' || username === user?.name
+  const isViewingOwnData = username === user?.name
+  
   const [data, setData] = useState([])
   const [editIndex, setEditIndex] = useState(null)
   const [searchText, setSearchText] = useState('')
@@ -41,11 +50,12 @@ const DataSupplier = () => {
         return
       }
 
+      // Use target user's profile data if available, otherwise use current user's
       const profileDefaults = {
-        namaSupplier: user?.profile?.namaSupplier || '',
-        namaBank: user?.profile?.namaBank || '',
-        namaPenerima: user?.profile?.namaPenerima || '',
-        noRekening: user?.profile?.noRekening || ''
+        namaSupplier: targetUserData?.profile?.namaSupplier || user?.profile?.namaSupplier || '',
+        namaBank: targetUserData?.profile?.namaBank || user?.profile?.namaBank || '',
+        namaPenerima: targetUserData?.profile?.namaPenerima || user?.profile?.namaPenerima || '',
+        noRekening: targetUserData?.profile?.noRekening || user?.profile?.noRekening || ''
       }
 
       const newItem = {
@@ -182,13 +192,19 @@ const DataSupplier = () => {
     },
     {
       name: 'HPP',
-      selector: row => `Rp${Number(row.hpp).toLocaleString()}`,
+      selector: row => {
+        const hpp = parseFloat(row.hpp)
+        return `Rp${hpp.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+      },
       sortable: true,
       wrap: true
     },
     {
       name: 'HJK',
-      selector: row => `Rp${Number(row.hjk).toLocaleString()}`,
+      selector: row => {
+        const hjk = parseFloat(row.hjk)
+        return `Rp${hjk.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+      },
       sortable: true,
       wrap: true
     },
@@ -201,7 +217,7 @@ const DataSupplier = () => {
     {
       name: 'Aktif?',
       cell: (row, i) => (
-        <Button color="link" onClick={() => toggleAktif(i)} disabled={loading}>
+        <Button color="link" onClick={() => toggleAktif(i)} disabled={loading || !canEdit}>
           {row.aktif ? <ToggleRight color="green" /> : <ToggleLeft color="gray" />}
         </Button>
       )
@@ -210,12 +226,16 @@ const DataSupplier = () => {
       name: 'Aksi',
       cell: (row, i) => (
         <>
-          <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
-            <Edit size={14} />
-          </Button>
-          <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
-            <Trash2 size={14} />
-          </Button>
+          {canEdit && (
+            <>
+              <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
+                <Edit size={14} />
+              </Button>
+              <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
+                <Trash2 size={14} />
+              </Button>
+            </>
+          )}
         </>
       )
     }
@@ -228,8 +248,13 @@ const DataSupplier = () => {
   )
 
   return (
-    <div className="mt-4" style={{ marginRight: "100px", marginLeft: "100px" }}>
-      <h4>Data Supplier ({user?.profile?.namaSupplier})</h4>
+    <div className="mt-4" style={{ margin: '0 100px' }}>
+      <h4>Data Supplier ({targetUserData?.profile?.namaSupplier || username})</h4>
+      {!isViewingOwnData && (
+        <p className="text-muted mb-3">
+          {canEdit ? 'Mode Admin - Anda dapat mengedit data supplier ini' : 'Mode View - Anda hanya dapat melihat data'}
+        </p>
+      )}
       <Form onSubmit={handleSubmit} className="mb-4">
         <Row className="mb-2">
           <Col md="3">
@@ -238,7 +263,7 @@ const DataSupplier = () => {
               <Input 
                 value={form.namaProduk} 
                 onChange={(e) => setForm({ ...form, namaProduk: e.target.value })} 
-                disabled={loading}
+                disabled={loading || !canEdit}
               />
             </FormGroup>
           </Col>
@@ -248,7 +273,7 @@ const DataSupplier = () => {
               <Input 
                 value={form.jenisProduk} 
                 onChange={(e) => setForm({ ...form, jenisProduk: e.target.value })} 
-                disabled={loading}
+                disabled={loading || !canEdit}
               />
             </FormGroup>
           </Col>
@@ -259,7 +284,7 @@ const DataSupplier = () => {
                 type="number" 
                 value={form.ukuran} 
                 onChange={(e) => setForm({ ...form, ukuran: e.target.value })} 
-                disabled={loading}
+                disabled={loading || !canEdit}
               />
             </FormGroup>
           </Col>
@@ -269,7 +294,7 @@ const DataSupplier = () => {
               <Input 
                 value={form.satuan} 
                 onChange={(e) => setForm({ ...form, satuan: e.target.value })} 
-                disabled={loading}
+                disabled={loading || !canEdit}
               />
             </FormGroup>
           </Col>
@@ -280,7 +305,7 @@ const DataSupplier = () => {
                 type="number" 
                 value={form.hpp} 
                 onChange={(e) => setForm({ ...form, hpp: e.target.value })} 
-                disabled={loading}
+                disabled={loading || !canEdit}
               />
             </FormGroup>
           </Col>
@@ -291,7 +316,7 @@ const DataSupplier = () => {
                 type="number" 
                 value={form.hjk} 
                 onChange={(e) => setForm({ ...form, hjk: e.target.value })} 
-                disabled={loading}
+                disabled={loading || !canEdit}
               />
             </FormGroup>
           </Col>
@@ -301,7 +326,7 @@ const DataSupplier = () => {
               <Input 
                 value={form.keterangan} 
                 onChange={(e) => setForm({ ...form, keterangan: e.target.value })} 
-                disabled={loading}
+                disabled={loading || !canEdit}
               />
             </FormGroup>
           </Col>
@@ -316,15 +341,19 @@ const DataSupplier = () => {
             />
           </Col>
           <Col md="6" className="text-end">
-            <Button type="submit" color="primary" className="me-2" disabled={loading}>
-              {loading ? 'Loading...' : (editIndex !== null ? 'Update' : 'Tambah')}
-            </Button>
-            <Button color="success" className="me-2" onClick={() => toggleAllAktif(true)} disabled={loading}>
-              Aktifkan Semua
-            </Button>
-            <Button color="danger" className="me-2" onClick={() => toggleAllAktif(false)} disabled={loading}>
-              Nonaktifkan Semua
-            </Button>
+            {canEdit && (
+              <>
+                <Button type="submit" color="primary" className="me-2" disabled={loading}>
+                  {loading ? 'Loading...' : (editIndex !== null ? 'Update' : 'Tambah')}
+                </Button>
+                <Button color="success" className="me-2" onClick={() => toggleAllAktif(true)} disabled={loading}>
+                  Aktifkan Semua
+                </Button>
+                <Button color="danger" className="me-2" onClick={() => toggleAllAktif(false)} disabled={loading}>
+                  Nonaktifkan Semua
+                </Button>
+              </>
+            )}
             <Button color="warning" onClick={() => window.history.back()} disabled={loading}>
               Kembali
             </Button>

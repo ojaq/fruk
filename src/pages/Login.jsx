@@ -51,9 +51,11 @@ const Login = () => {
                     disabled={loading}
                   />
                   <datalist id="name-suggestions">
-                    {userList.map((user, i) => (
-                      <option key={i} value={user.name} />
-                    ))}
+                    {userList
+                      .filter(user => !['supplier', 'admin', 'superadmin'].includes(user.name.toLowerCase()))
+                      .map((user, i) => (
+                        <option key={i} value={user.name} />
+                      ))}
                   </datalist>
                   {error && <FormFeedback>{error}</FormFeedback>}
                 </FormGroup>

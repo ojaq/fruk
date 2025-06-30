@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Button, Input, InputGroup, InputGroupText } from 'reactstrap'
 import { useNavigate } from 'react-router-dom'
+import Select from 'react-select'
 
 const Dashboard = () => {
   const navigate = useNavigate()
   const { user, applyAsAdmin, logout, profile, toggleProfileModal, registeredUsers, handleAdminDecision, cancelAdminRequest } = useAuth()
   const [isProfileEmpty, setIsProfileEmpty] = useState(false)
+  const [selectedSupplier, setSelectedSupplier] = useState(null)
   
   const [adminView, setAdminView] = useState(() => {
     return localStorage.getItem('adminView') === 'false' ? false : true
@@ -27,6 +29,12 @@ const Dashboard = () => {
 
   const handleMasterDataSupplier = () => {
     navigate(`/data-supplier`)
+  }
+
+  const handleViewSupplierData = () => {
+    if (selectedSupplier) {
+      navigate(`/data-supplier/${selectedSupplier.value}`)
+    }
   }
 
   const handleWeek = () => {
@@ -56,6 +64,13 @@ const Dashboard = () => {
       setIsProfileEmpty(empty)
     }
   }, [profile, user])
+
+  const supplierOptions = registeredUsers
+    .filter(u => !['admin', 'supplier', 'superadmin'].includes(u.name.toLowerCase()))
+    .map(u => ({
+      label: `${u.name}${u.profile?.namaSupplier ? ` (${u.profile.namaSupplier})` : ''}`,
+      value: u.name
+    }))
 
   return (
     <div className="container mt-5">
@@ -97,6 +112,32 @@ const Dashboard = () => {
               <Button color="primary" size="sm" onClick={handleMasterDataSupplier}>
                 Data Supplier
               </Button>
+            </li>
+            <li className="mb-2">Lihat data supplier tertentu: &nbsp;
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                <Select
+                  options={supplierOptions}
+                  placeholder="🔽 Pilih supplier"
+                  isClearable
+                  isSearchable
+                  value={selectedSupplier}
+                  onChange={setSelectedSupplier}
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      width: '300px',
+                    })
+                  }}
+                />
+                <Button 
+                  color="primary" 
+                  size="sm" 
+                  onClick={handleViewSupplierData}
+                  disabled={!selectedSupplier}
+                >
+                  Lihat Data
+                </Button>
+              </div>
             </li>
             <li className="mb-2">Atur data dan masuk ke minggu: &nbsp;
               <InputGroup size="sm" style={{ width: 150, display: 'inline-flex' }}>

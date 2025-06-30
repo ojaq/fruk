@@ -40,8 +40,22 @@ const MasterSupplier = () => {
     { name: 'Jenis', selector: row => row.jenisProduk, wrap: true },
     { name: 'Ukuran', selector: row => row.ukuran, wrap: true },
     { name: 'Satuan', selector: row => row.satuan, wrap: true },
-    { name: 'HPP', selector: row => `Rp${Number(row.hpp).toLocaleString()}`, wrap: true },
-    { name: 'HJK', selector: row => `Rp${Number(row.hjk).toLocaleString()}`, wrap: true },
+    { 
+      name: 'HPP', 
+      selector: row => {
+        const hpp = parseFloat(row.hpp)
+        return `Rp${hpp.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+      }, 
+      wrap: true 
+    },
+    { 
+      name: 'HJK', 
+      selector: row => {
+        const hjk = parseFloat(row.hjk)
+        return `Rp${hjk.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+      }, 
+      wrap: true 
+    },
     { name: 'Keterangan', selector: row => row.keterangan || '-', wrap: true },
     { name: 'Bank', selector: row => row.namaBank, wrap: true },
     { name: 'Penerima', selector: row => row.namaPenerima, wrap: true },

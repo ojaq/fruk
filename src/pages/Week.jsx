@@ -148,7 +148,13 @@ const Week = () => {
     { name:'Produk', selector:r=>r.produkLabel, wrap:true },
     { name:'Catatan', selector:r=>r.catatan, wrap:true  },
     { name:'Jumlah', selector:r=>r.jumlah },
-    { name:'Total Bayar', selector:r=>`Rp${Number(r.bayar).toLocaleString()}` },
+    { 
+      name:'Total Bayar', 
+      selector:r=>{
+        const bayar = parseFloat(r.bayar)
+        return `Rp${bayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+      } 
+    },
     {
       name:'Aksi',
       cell:(r,i)=>(
@@ -243,7 +249,15 @@ const Week = () => {
           <Col md="2">
             <FormGroup>
               <Label>Total Bayar</Label>
-              <Input readOnly value={form.bayar?`Rp${Number(form.bayar).toLocaleString()}`:''} disabled={loading} />
+              <Input 
+                readOnly 
+                value={
+                  form.bayar 
+                    ? `Rp${parseFloat(form.bayar).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+                    : ''
+                } 
+                disabled={loading} 
+              />
             </FormGroup>
           </Col>
         </Row>
