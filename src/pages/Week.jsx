@@ -25,8 +25,8 @@ const Week = () => {
   const isAllWeek = !num
   const allWeekEntries = isAllWeek
     ? Object.keys(weekData)
-        .filter(k => /^W\d+/.test(k))
-        .flatMap(k => weekData[k] || [])
+      .filter(k => /^W\d+/.test(k))
+      .flatMap(k => weekData[k] || [])
     : []
 
   useEffect(() => {
@@ -172,7 +172,7 @@ const Week = () => {
       name:'Aksi',
       cell:(r,i)=>(
         <>
-          <Button size="sm" color="warning" className="me-2" onClick={()=>handleEdit(r,i)} disabled={loading}> 
+          <Button size="sm" color="warning" className="me-2" onClick={()=>handleEdit(r,i)} disabled={loading || isAllWeek}> 
             <Edit size={14}/> 
           </Button>
           <Button size="sm" color="danger" onClick={()=>handleDelete(i)} disabled={loading}> 
@@ -312,6 +312,8 @@ const Week = () => {
           columns={columns}
           data={filtered}
           pagination
+          paginationPerPage={10}
+          paginationRowsPerPageOptions={[10, 25, 50, 100]}
           noDataComponent="Belum ada data"
           highlightOnHover
           responsive

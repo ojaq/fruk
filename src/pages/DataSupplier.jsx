@@ -371,6 +371,8 @@ const DataSupplier = () => {
           columns={columns}
           data={filteredData}
           pagination
+          paginationPerPage={10}
+          paginationRowsPerPageOptions={[10, 25, 50, 100]}
           noDataComponent="Belum ada data"
           responsive
           highlightOnHover

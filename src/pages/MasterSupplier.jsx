@@ -196,6 +196,8 @@ const MasterSupplier = () => {
           columns={columns}
           data={filtered}
           pagination
+          paginationPerPage={10}
+          paginationRowsPerPageOptions={[10, 25, 50, 100]}
           noDataComponent="Belum ada data supplier aktif"
           responsive
           highlightOnHover

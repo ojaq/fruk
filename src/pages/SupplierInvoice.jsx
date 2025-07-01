@@ -330,13 +330,23 @@ const SupplierInvoice = () => {
             onChange={setSelectedSupplier}
           />
         </Col>
-        <Col md="4" className="text-end">
+        <Col md="2">
           <Button color="danger" onClick={() => {
             setSearchText('')
             setSelectedSupplier(null)
           }}>
             Reset Filter
           </Button>
+        </Col>
+        <Col md="2" className="text-end">
+          {grouped.length > 0 && (
+            <Button
+              color="success"
+              onClick={() => generateInvoiceSheet()}
+            >
+              Generate All Invoice
+            </Button>
+          )}
         </Col>
       </Row>
       {filteredGrouped.map(group => (
@@ -355,6 +365,8 @@ const SupplierInvoice = () => {
               ]}
               data={group.items}
               pagination
+              paginationPerPage={10}
+              paginationRowsPerPageOptions={[10, 25, 50, 100]}
               highlightOnHover
               responsive
             />
@@ -374,17 +386,6 @@ const SupplierInvoice = () => {
           </CardFooter>
         </Card>
       ))}
-
-      {grouped.length > 0 && (
-        <div className="text-end">
-          <Button 
-            color="success" 
-            onClick={() => generateInvoiceSheet()}
-          >
-            Generate All Invoice
-          </Button>
-        </div>
-      )}
     </div>
   )
 }
