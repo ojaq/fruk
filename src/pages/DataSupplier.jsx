@@ -169,7 +169,8 @@ const DataSupplier = () => {
     {
       name: 'No',
       selector: (row, i) => i + 1,
-      width: '60px'
+      width: '60px',
+      wrap: true
     },
     {
       name: 'Nama Produk',
@@ -225,7 +226,8 @@ const DataSupplier = () => {
         <Button color="link" onClick={() => toggleAktif(i)} disabled={loading || !canEdit}>
           {row.aktif ? <ToggleRight color="green" /> : <ToggleLeft color="gray" />}
         </Button>
-      )
+      ),
+      wrap: true
     },
     {
       name: 'Aksi',
@@ -242,7 +244,8 @@ const DataSupplier = () => {
             </>
           )}
         </>
-      )
+      ),
+      wrap: true
     }
   ]
 
@@ -253,7 +256,7 @@ const DataSupplier = () => {
   )
 
   return (
-    <div className="mt-4" style={{ margin: '0 100px' }}>
+    <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
       <h4>Data Supplier ({targetUserData?.profile?.namaSupplier || username})</h4>
       {!isViewingOwnData && (
         <p className="text-muted mb-3">
@@ -262,7 +265,7 @@ const DataSupplier = () => {
       )}
       <Form onSubmit={handleSubmit} className="mb-4">
         <Row className="mb-2">
-          <Col md="3">
+          <Col xs="12" sm="6" md="3" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Nama Produk *</Label>
               <Input 
@@ -272,7 +275,7 @@ const DataSupplier = () => {
               />
             </FormGroup>
           </Col>
-          <Col md="2">
+          <Col xs="12" sm="6" md="2" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Jenis Produk *</Label>
               <Input 
@@ -282,7 +285,7 @@ const DataSupplier = () => {
               />
             </FormGroup>
           </Col>
-          <Col md="1">
+          <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Ukuran *</Label>
               <Input 
@@ -293,7 +296,7 @@ const DataSupplier = () => {
               />
             </FormGroup>
           </Col>
-          <Col md="1">
+          <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Satuan *</Label>
               <Input 
@@ -303,7 +306,7 @@ const DataSupplier = () => {
               />
             </FormGroup>
           </Col>
-          <Col md="1">
+          <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>HPP *</Label>
               <Input 
@@ -314,7 +317,7 @@ const DataSupplier = () => {
               />
             </FormGroup>
           </Col>
-          <Col md="1">
+          <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>HJK *</Label>
               <Input 
@@ -325,7 +328,7 @@ const DataSupplier = () => {
               />
             </FormGroup>
           </Col>
-          <Col md="3">
+          <Col xs="12" md="3">
             <FormGroup>
               <Label>Keterangan</Label>
               <Input 
@@ -337,7 +340,7 @@ const DataSupplier = () => {
           </Col>
         </Row>
         <Row className="mb-3">
-          <Col md="6">
+          <Col xs="12" md="6" className="mb-2 mb-md-0">
             <Input
               placeholder="🔍 Cari produk..."
               value={searchText}
@@ -345,7 +348,7 @@ const DataSupplier = () => {
               disabled={loading}
             />
           </Col>
-          <Col md="6" className="text-end">
+          <Col xs="12" md="6" className="text-end">
             {canEdit && (
               <>
                 <Button type="submit" color="primary" className="me-2" disabled={loading}>
@@ -366,7 +369,7 @@ const DataSupplier = () => {
         </Row>
       </Form>
 
-      <div className="border">
+      <div className="border overflow-auto" style={{ minHeight: 200 }}>
         <DataTable
           columns={columns}
           data={filteredData}

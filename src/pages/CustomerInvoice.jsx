@@ -258,26 +258,26 @@ const CustomerInvoice = () => {
   })
 
   return (
-    <div className="mx-5 mt-4">
+    <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
       <Row className="mb-3">
-        <Col md="6">
+        <Col xs="12" md="6">
           <h4>Customer Invoice - {num ? `Minggu ${num}` : 'Semua Minggu'}</h4>
         </Col>
-        <Col md="6" className="text-end">
+        <Col xs="12" md="6" className="text-end mt-2 mt-md-0">
           <Button color="warning" onClick={() => window.history.back()}>
             Kembali
           </Button>
         </Col>
       </Row>
       <Row className="mb-3">
-        <Col md="4">
+        <Col xs="12" md="4" className="mb-2 mb-md-0">
           <Input
             placeholder="🔍 Cari..."
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
           />
         </Col>
-        <Col md="4">
+        <Col xs="12" md="4" className="mb-2 mb-md-0">
           <Select
             options={grouped.map(g => ({ label: g.pemesan, value: g.pemesan }))}
             placeholder="🔽 Filter Pemesan"
@@ -287,7 +287,7 @@ const CustomerInvoice = () => {
             onChange={setSelectedPemesan}
           />
         </Col>
-        <Col md="2">
+        <Col xs="6" md="2" className="mb-2 mb-md-0">
           <Button color="danger" onClick={() => {
             setSearchText('')
             setSelectedPemesan(null)
@@ -295,7 +295,7 @@ const CustomerInvoice = () => {
             Reset Filter
           </Button>
         </Col>
-        <Col md="2" className="text-end">
+        <Col xs="6" md="2" className="text-end">
           {grouped.length > 0 && (
             <Button
               color="success"
@@ -312,26 +312,28 @@ const CustomerInvoice = () => {
             <h5>{group.pemesan}</h5>
           </CardHeader>
           <CardBody className="p-0">
-            <DataTable
-              columns={[
-                { name: 'Produk', selector: row => `${row.produkLabel}${row.catatan ? ` (${row.catatan})` : ''}`, wrap: true },
-                { name: 'Jumlah', selector: row => row.jumlah },
-                { name: 'Harga Satuan', selector: row => `Rp${(row.bayar / row.jumlah).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}` },
-                { name: 'Total Bayar', selector: row => `Rp${row.bayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}` }
-              ]}
-              data={group.items}
-              pagination
-              paginationPerPage={10}
-              paginationRowsPerPageOptions={[10, 25, 50, 100]}
-              highlightOnHover
-              responsive
-            />
+            <div className="overflow-auto" style={{ minHeight: 200 }}>
+              <DataTable
+                columns={[
+                  { name: 'Produk', selector: row => `${row.produkLabel}${row.catatan ? ` (${row.catatan})` : ''}`, wrap: true },
+                  { name: 'Jumlah', selector: row => row.jumlah, wrap: true },
+                  { name: 'Harga Satuan', selector: row => `Rp${(row.bayar / row.jumlah).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, wrap: true },
+                  { name: 'Total Bayar', selector: row => `Rp${row.bayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, wrap: true }
+                ]}
+                data={group.items}
+                pagination
+                paginationPerPage={10}
+                paginationRowsPerPageOptions={[10, 25, 50, 100]}
+                highlightOnHover
+                responsive
+              />
+            </div>
             <Row className="p-3">
-              <Col md="6" className="text-start">
+              <Col xs="12" md="6" className="text-start mb-2 mb-md-0">
                 <strong>Total Qty:</strong> {group.totalQty} &nbsp; | &nbsp;
                 <strong>Total:</strong> Rp{group.totalHarga.toLocaleString()}
               </Col>
-              <Col md="6" className="text-end">
+              <Col xs="12" md="6" className="text-end">
                 <Button color="primary" size="sm" onClick={() => sendInvoice(group.pemesan, group.items, num)}>
                   Generate Invoice {group.pemesan}
                 </Button>

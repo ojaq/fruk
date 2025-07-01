@@ -156,17 +156,18 @@ const Week = () => {
   }
 
   const columns = [
-    { name:'No', selector:(r,i)=>i+1, width:'60px' },
+    { name:'No', selector:(r,i)=>i+1, width:'60px', wrap: true },
     { name:'Pemesan', selector:r=>r.pemesan, wrap:true },
     { name:'Produk', selector:r=>r.produkLabel, wrap:true },
     { name:'Catatan', selector:r=>r.catatan || "-", wrap:true  },
-    { name:'Jumlah', selector:r=>r.jumlah },
+    { name:'Jumlah', selector:r=>r.jumlah, wrap:true },
     { 
       name:'Total Bayar', 
       selector:r=>{
         const bayar = parseFloat(r.bayar)
         return `Rp${bayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
-      } 
+      },
+      wrap: true
     },
     {
       name:'Aksi',
@@ -179,7 +180,8 @@ const Week = () => {
             <Trash2 size={14}/> 
           </Button>
         </>
-      )
+      ),
+      wrap: true
     }
   ]
 
@@ -197,12 +199,12 @@ const Week = () => {
   }))
 
   return (
-    <div className="mt-4 mx-5">
+    <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
       <Row className="mb-2">
-        <Col md="6">
+        <Col xs="12" md="6">
           <h4>{isAllWeek ? 'Semua Minggu' : `Minggu ${num}`}</h4>
         </Col>
-        <Col md="6" className="text-end">
+        <Col xs="12" md="6" className="text-end mt-2 mt-md-0">
           <Button color="warning" onClick={() => window.history.back()}>
             Kembali
           </Button>
@@ -210,7 +212,7 @@ const Week = () => {
       </Row>
       <Form onSubmit={handleSubmit} className="mb-4">
         <Row className="mb-2">
-          <Col md="3">
+          <Col xs="12" sm="6" md="3" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Pemesan *</Label>
               <Input
@@ -220,7 +222,7 @@ const Week = () => {
               />
             </FormGroup>
           </Col>
-          <Col md="3">
+          <Col xs="12" sm="6" md="3" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Produk *</Label>
               <Select
@@ -238,7 +240,7 @@ const Week = () => {
               )}
             </FormGroup>
           </Col>
-          <Col md="3">
+          <Col xs="12" sm="6" md="3" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Catatan/Varian</Label>
               <Input
@@ -248,7 +250,7 @@ const Week = () => {
               />
             </FormGroup>
           </Col>
-          <Col md="1">
+          <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Jumlah *</Label>
               <Input
@@ -259,7 +261,7 @@ const Week = () => {
               />
             </FormGroup>
           </Col>
-          <Col md="2">
+          <Col xs="6" sm="3" md="2">
             <FormGroup>
               <Label>Total Bayar</Label>
               <Input 
@@ -275,7 +277,7 @@ const Week = () => {
           </Col>
         </Row>
         <Row className="mb-3">
-          <Col md="4">
+          <Col xs="12" md="4" className="mb-2 mb-md-0">
             <Input
               placeholder="🔍 Cari apa aja..."
               value={searchText}
@@ -283,7 +285,7 @@ const Week = () => {
               disabled={loading}
             />
           </Col>
-          <Col md="4">
+          <Col xs="12" md="4" className="mb-2 mb-md-0">
             <Select
               options={uniquePemesanOptions}
               isClearable
@@ -294,20 +296,20 @@ const Week = () => {
               isDisabled={loading}
             />
           </Col>
-          <Col md="4" className="text-end">
-            <Button color="danger" className="me-3" onClick={() => {
+          <Col xs="12" md="4" className="text-end">
+            <Button color="danger" className="me-3 mb-2 mb-md-0" onClick={() => {
               setSearchText('')
               setSelectedPemesan(null)
             }} disabled={loading}>
               Reset Filter
             </Button>
-            <Button type="submit" color="primary" disabled={loading || isAllWeek}>
+            <Button type="submit" color="primary" disabled={loading || isAllWeek} className="mb-2 mb-md-0">
               {loading ? 'Loading...' : (editIndex!==null?'Update':'Tambah')}
             </Button>
           </Col>
         </Row>
       </Form>
-      <div className="border">
+      <div className="border overflow-auto" style={{ minHeight: 200 }}>
         <DataTable
           columns={columns}
           data={filtered}

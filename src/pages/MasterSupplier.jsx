@@ -87,7 +87,7 @@ const MasterSupplier = () => {
   }
 
   const columns = [
-    { name: 'No', selector: (row, i) => i + 1, width: '60px' },
+    { name: 'No', selector: (row, i) => i + 1, width: '60px', wrap: true },
     { name: 'Nama Supplier', selector: row => row.namaSupplier, wrap: true },
     { name: 'Nama Produk', selector: row => row.namaProduk, wrap: true },
     { name: 'Jenis', selector: row => row.jenisProduk, wrap: true },
@@ -125,7 +125,8 @@ const MasterSupplier = () => {
           </Button>
         </>
       ),
-      width: '140px'
+      width: '140px',
+      wrap: true
     }] : [])
   ]
 
@@ -142,12 +143,12 @@ const MasterSupplier = () => {
   })
 
   return (
-    <div className="mt-4" style={{ margin: '0 100px' }}>
+    <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
       <Row className="mb-3">
-        <Col md="6">
+        <Col xs="12" md="6">
           <h4>Master Data Supplier</h4>
         </Col>
-        <Col md="6" className="text-end">
+        <Col xs="12" md="6" className="text-end mt-2 mt-md-0">
           <Button color="danger" className="me-3" onClick={() => {
             setSearchText('')
             setFilterSupplier(null)
@@ -162,14 +163,14 @@ const MasterSupplier = () => {
       </Row>
 
       <Row className="mt-3 mb-4">
-        <Col md="4">
+        <Col xs="12" md="4" className="mb-2 mb-md-0">
           <Input
             placeholder="🔍 Cari apa aja..."
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
           />
         </Col>
-        <Col md="4">
+        <Col xs="12" md="4" className="mb-2 mb-md-0">
           <Select
             options={supplierOptions}
             placeholder="🔽 Filter Supplier"
@@ -179,7 +180,7 @@ const MasterSupplier = () => {
             onChange={setFilterSupplier}
           />
         </Col>
-        <Col md="4">
+        <Col xs="12" md="4">
           <Select
             options={jenisOptions}
             placeholder="🔽 Filter Jenis"
@@ -191,7 +192,7 @@ const MasterSupplier = () => {
         </Col>
       </Row>
 
-      <div className="border">
+      <div className="border overflow-auto" style={{ minHeight: 200 }}>
         <DataTable
           columns={columns}
           data={filtered}

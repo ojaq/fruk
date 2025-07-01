@@ -301,26 +301,26 @@ const SupplierInvoice = () => {
   })
 
   return (
-    <div className="mx-5 mt-4">
+    <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
       <Row className="mb-3">
-        <Col md="6">
+        <Col xs="12" md="6">
           <h4>Supplier Invoice - {num ? `Minggu ${num}` : 'Semua Minggu'}</h4>
         </Col>
-        <Col md="6" className="text-end">
+        <Col xs="12" md="6" className="text-end mt-2 mt-md-0">
           <Button color="warning" onClick={() => window.history.back()}>
             Kembali
           </Button>
         </Col>
       </Row>
       <Row className="mb-3">
-        <Col md="4">
+        <Col xs="12" md="4" className="mb-2 mb-md-0">
           <Input
             placeholder="🔍 Cari..."
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
           />
         </Col>
-        <Col md="4">
+        <Col xs="12" md="4" className="mb-2 mb-md-0">
           <Select
             options={grouped.map(g => ({ label: g.supplier, value: g.supplier }))}
             placeholder="🔽 Filter Supplier"
@@ -330,7 +330,7 @@ const SupplierInvoice = () => {
             onChange={setSelectedSupplier}
           />
         </Col>
-        <Col md="2">
+        <Col xs="6" md="2" className="mb-2 mb-md-0">
           <Button color="danger" onClick={() => {
             setSearchText('')
             setSelectedSupplier(null)
@@ -338,7 +338,7 @@ const SupplierInvoice = () => {
             Reset Filter
           </Button>
         </Col>
-        <Col md="2" className="text-end">
+        <Col xs="6" md="2" className="text-end">
           {grouped.length > 0 && (
             <Button
               color="success"
@@ -355,29 +355,31 @@ const SupplierInvoice = () => {
             <h5>{group.supplier}</h5>
           </CardHeader>
           <CardBody className="p-0">
-            <DataTable
-              columns={[
-                { name: 'Produk', selector: r => r.produk, wrap: true },
-                { name: 'Pemesan', selector: r => r.pemesanCombined, wrap: true },
-                { name: 'Jumlah', selector: r => r.jumlah },
-                { name: 'Harga Satuan', selector: r => `Rp${r.hpp.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}` },
-                { name: 'Total Harga', selector: r => `Rp${r.total.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}` }
-              ]}
-              data={group.items}
-              pagination
-              paginationPerPage={10}
-              paginationRowsPerPageOptions={[10, 25, 50, 100]}
-              highlightOnHover
-              responsive
-            />
+            <div className="overflow-auto" style={{ minHeight: 200 }}>
+              <DataTable
+                columns={[
+                  { name: 'Produk', selector: r => r.produk, wrap: true },
+                  { name: 'Pemesan', selector: r => r.pemesanCombined, wrap: true },
+                  { name: 'Jumlah', selector: r => r.jumlah, wrap: true },
+                  { name: 'Harga Satuan', selector: r => `Rp${r.hpp.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, wrap: true },
+                  { name: 'Total Harga', selector: r => `Rp${r.total.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, wrap: true }
+                ]}
+                data={group.items}
+                pagination
+                paginationPerPage={10}
+                paginationRowsPerPageOptions={[10, 25, 50, 100]}
+                highlightOnHover
+                responsive
+              />
+            </div>
           </CardBody>
           <CardFooter className="py-3">
             <Row>
-              <Col md="6" className="text-start">
+              <Col xs="12" md="6" className="text-start mb-2 mb-md-0">
                 <strong>Total Qty:</strong> {group.totalQty} &nbsp; | &nbsp;
                 <strong>Total:</strong> Rp{group.totalHarga.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
               </Col>
-              <Col md="6" className="text-end">
+              <Col xs="12" md="6" className="text-end">
                 <Button color="primary" size="sm" onClick={() => sendInvoice(group.supplier, group.items, num)}>
                   Generate Invoice {group.supplier}
                 </Button>
