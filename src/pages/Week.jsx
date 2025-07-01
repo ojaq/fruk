@@ -10,7 +10,7 @@ import { useParams } from 'react-router-dom'
 const Week = () => {
   const { productData, registeredUsers, weekData, saveWeekData } = useAuth()
   const { num } = useParams()
-  const sheetName  = `W${num}`
+  const sheetName = `W${num}`
 
   const [form, setForm] = useState({
     pemesan: '', produkLabel: null, catatan: '', jumlah: '', bayar: ''
@@ -78,11 +78,11 @@ const Week = () => {
   const handleSubmit = async e => {
     e.preventDefault()
     setLoading(true)
-    
+
     try {
       const { pemesan, produk, jumlah } = form
       if (!pemesan || !produk || !jumlah) {
-        Swal.fire('Gagal','Semua field * wajib diisi','error')
+        Swal.fire('Gagal', 'Semua field * wajib diisi', 'error')
         return
       }
 
@@ -99,26 +99,26 @@ const Week = () => {
       if (editIndex !== null) {
         updated[editIndex] = entry
         await saveWeekData(sheetName, updated)
-        Swal.fire('Berhasil','Data diperbarui','success')
+        Swal.fire('Berhasil', 'Data diperbarui', 'success')
       } else {
         updated.push(entry)
         await saveWeekData(sheetName, updated)
-        Swal.fire('Berhasil','Data ditambahkan','success')
+        Swal.fire('Berhasil', 'Data ditambahkan', 'success')
       }
 
       setData(updated)
-      setForm({ pemesan:'', produkLabel:null, catatan:'', jumlah:'', bayar:'' })
+      setForm({ pemesan: '', produkLabel: null, catatan: '', jumlah: '', bayar: '' })
       setEditIndex(null)
     } catch (error) {
       console.error('Error saving week data:', error)
-      Swal.fire('Error','Gagal menyimpan data','error')
+      Swal.fire('Error', 'Gagal menyimpan data', 'error')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleEdit = (row,i) => {
-    const opt = produkOptions.find(o=>o.label===row.produkLabel)
+  const handleEdit = (row, i) => {
+    const opt = produkOptions.find(o => o.label === row.produkLabel)
     setForm({
       pemesan: row.pemesan,
       produkLabel: opt,
@@ -131,11 +131,11 @@ const Week = () => {
 
   const handleDelete = async index => {
     const result = await Swal.fire({
-      title: `Hapus baris ke-${index+1}?`,
+      title: `Hapus baris ke-${index + 1}?`,
       text: 'Anda akan menghapus data ini.',
-      icon:'warning',
-      showCancelButton:true,
-      confirmButtonText:'Hapus'
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Hapus'
     })
 
     if (!result.isConfirmed) return
@@ -143,44 +143,46 @@ const Week = () => {
     setLoading(true)
     try {
       const updated = [...data]
-      updated.splice(index,1)
+      updated.splice(index, 1)
       await saveWeekData(sheetName, updated)
       setData(updated)
-      Swal.fire('Dihapus!','Data berhasil dihapus.','success')
+      Swal.fire('Dihapus!', 'Data berhasil dihapus.', 'success')
     } catch (error) {
       console.error('Error deleting week data:', error)
-      Swal.fire('Error','Gagal menghapus data','error')
+      Swal.fire('Error', 'Gagal menghapus data', 'error')
     } finally {
       setLoading(false)
     }
   }
 
   const columns = [
-    { name:'No', selector:(r,i)=>i+1, width:'60px', wrap: true },
-    { name:'Pemesan', selector:r=>r.pemesan, wrap:true },
-    { name:'Produk', selector:r=>r.produkLabel, wrap:true },
-    { name:'Catatan', selector:r=>r.catatan || "-", wrap:true  },
-    { name:'Jumlah', selector:r=>r.jumlah, wrap:true },
-    { 
-      name:'Total Bayar', 
-      selector:r=>{
+    { name: 'No', selector: (r, i) => i + 1, width: '60px', wrap: true },
+    { name: 'Pemesan', selector: r => r.pemesan, wrap: true },
+    { name: 'Produk', selector: r => r.produkLabel, wrap: true },
+    { name: 'Catatan', selector: r => r.catatan || "-", wrap: true },
+    { name: 'Jumlah', selector: r => r.jumlah, wrap: true, width: "120px", },
+    {
+      name: 'Total Bayar',
+      selector: r => {
         const bayar = parseFloat(r.bayar)
         return `Rp${bayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
       },
+      width: "140px",
       wrap: true
     },
     {
-      name:'Aksi',
-      cell:(r,i)=>(
+      name: 'Aksi',
+      cell: (r, i) => (
         <>
-          <Button size="sm" color="warning" className="me-2" onClick={()=>handleEdit(r,i)} disabled={loading || isAllWeek}> 
-            <Edit size={14}/> 
+          <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(r, i)} disabled={loading || isAllWeek}>
+            <Edit size={16} />
           </Button>
-          <Button size="sm" color="danger" onClick={()=>handleDelete(i)} disabled={loading}> 
-            <Trash2 size={14}/> 
+          <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
+            <Trash2 size={16} />
           </Button>
         </>
       ),
+      width: "140px",
       wrap: true
     }
   ]
@@ -217,7 +219,7 @@ const Week = () => {
               <Label>Pemesan *</Label>
               <Input
                 value={form.pemesan}
-                onChange={e=>setForm(f=>({...f,pemesan:e.target.value}))}
+                onChange={e => setForm(f => ({ ...f, pemesan: e.target.value }))}
                 disabled={loading || isAllWeek}
               />
             </FormGroup>
@@ -256,7 +258,7 @@ const Week = () => {
               <Input
                 type="number"
                 value={form.jumlah}
-                onChange={e=>handleJumlahChange(e.target.value)}
+                onChange={e => handleJumlahChange(e.target.value)}
                 disabled={loading || isAllWeek}
               />
             </FormGroup>
@@ -264,13 +266,13 @@ const Week = () => {
           <Col xs="6" sm="3" md="2">
             <FormGroup>
               <Label>Total Bayar</Label>
-              <Input 
-                readOnly 
+              <Input
+                readOnly
                 value={
-                  form.bayar 
+                  form.bayar
                     ? `Rp${parseFloat(form.bayar).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
                     : ''
-                } 
+                }
                 disabled={loading || isAllWeek}
               />
             </FormGroup>
@@ -304,7 +306,7 @@ const Week = () => {
               Reset Filter
             </Button>
             <Button type="submit" color="primary" disabled={loading || isAllWeek} className="mb-2 mb-md-0">
-              {loading ? 'Loading...' : (editIndex!==null?'Update':'Tambah')}
+              {loading ? 'Loading...' : (editIndex !== null ? 'Update' : 'Tambah')}
             </Button>
           </Col>
         </Row>

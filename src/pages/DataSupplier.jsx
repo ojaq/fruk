@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Button, Col, Form, FormGroup, Input, Label, Row } from 'reactstrap'
 import Swal from 'sweetalert2'
 import DataTable from 'react-data-table-component'
-import { Edit, Trash2, ToggleRight, ToggleLeft } from 'react-feather'
+import { Edit, Trash2, Check, X } from 'react-feather'
 import { useAuth } from '../context/AuthContext'
 import { useParams } from 'react-router-dom'
 
@@ -21,10 +21,10 @@ const DataSupplier = () => {
 
   const username = targetUser || user?.name || ''
   const targetUserData = registeredUsers.find(u => u.name === username)
-  
+
   const canEdit = user?.role === 'admin' || user?.role === 'superadmin' || username === user?.name
   const isViewingOwnData = username === user?.name
-  
+
   const [editIndex, setEditIndex] = useState(null)
   const [searchText, setSearchText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -96,7 +96,7 @@ const DataSupplier = () => {
         String(val).toLowerCase().includes(searchText.toLowerCase())
       )
     )
-    
+
     const selected = filteredData[index]
 
     const result = await Swal.fire({
@@ -112,13 +112,13 @@ const DataSupplier = () => {
 
     setLoading(true)
     try {
-      const actualIndex = data.findIndex(item => 
+      const actualIndex = data.findIndex(item =>
         item.namaProduk === selected.namaProduk &&
         item.jenisProduk === selected.jenisProduk &&
         item.ukuran === selected.ukuran &&
         item.satuan === selected.satuan
       )
-      
+
       if (actualIndex === -1) {
         Swal.fire('Error', 'Data tidak ditemukan', 'error')
         return
@@ -176,24 +176,14 @@ const DataSupplier = () => {
       name: 'Nama Produk',
       selector: row => row.namaProduk,
       sortable: true,
+      width: "350px",
       wrap: true
     },
     {
-      name: 'Jenis',
-      selector: row => row.jenisProduk,
+      name: 'Detail Produk',
+      selector: row => {return `${row.jenisProduk} ${row.ukuran} ${row.satuan}`},
       sortable: true,
-      wrap: true
-    },
-    {
-      name: 'Ukuran',
-      selector: row => row.ukuran,
-      sortable: true,
-      wrap: true
-    },
-    {
-      name: 'Satuan',
-      selector: row => row.satuan,
-      sortable: true,
+      width: "200px",
       wrap: true
     },
     {
@@ -203,6 +193,7 @@ const DataSupplier = () => {
         return `Rp${hpp.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
       },
       sortable: true,
+      width: "120px",
       wrap: true
     },
     {
@@ -212,6 +203,7 @@ const DataSupplier = () => {
         return `Rp${hjk.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
       },
       sortable: true,
+      width: "120px",
       wrap: true
     },
     {
@@ -223,10 +215,11 @@ const DataSupplier = () => {
     {
       name: 'Aktif?',
       cell: (row, i) => (
-        <Button color="link" onClick={() => toggleAktif(i)} disabled={loading || !canEdit}>
-          {row.aktif ? <ToggleRight color="green" /> : <ToggleLeft color="gray" />}
+        <Button size="sm" color={row.aktif ? "success" : "danger"} onClick={() => toggleAktif(i)} disabled={loading || !canEdit}>
+          {row.aktif ? <Check size={16} /> : <X size={16} />}
         </Button>
       ),
+      width: "70px",
       wrap: true
     },
     {
@@ -236,15 +229,16 @@ const DataSupplier = () => {
           {canEdit && (
             <>
               <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
-                <Edit size={14} />
+                <Edit size={16} />
               </Button>
               <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
-                <Trash2 size={14} />
+                <Trash2 size={16} />
               </Button>
             </>
           )}
         </>
       ),
+      width: "130px",
       wrap: true
     }
   ]
@@ -268,9 +262,9 @@ const DataSupplier = () => {
           <Col xs="12" sm="6" md="3" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Nama Produk *</Label>
-              <Input 
-                value={form.namaProduk} 
-                onChange={(e) => setForm({ ...form, namaProduk: e.target.value })} 
+              <Input
+                value={form.namaProduk}
+                onChange={(e) => setForm({ ...form, namaProduk: e.target.value })}
                 disabled={loading || !canEdit}
               />
             </FormGroup>
@@ -278,9 +272,9 @@ const DataSupplier = () => {
           <Col xs="12" sm="6" md="2" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Jenis Produk *</Label>
-              <Input 
-                value={form.jenisProduk} 
-                onChange={(e) => setForm({ ...form, jenisProduk: e.target.value })} 
+              <Input
+                value={form.jenisProduk}
+                onChange={(e) => setForm({ ...form, jenisProduk: e.target.value })}
                 disabled={loading || !canEdit}
               />
             </FormGroup>
@@ -288,10 +282,10 @@ const DataSupplier = () => {
           <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Ukuran *</Label>
-              <Input 
-                type="number" 
-                value={form.ukuran} 
-                onChange={(e) => setForm({ ...form, ukuran: e.target.value })} 
+              <Input
+                type="number"
+                value={form.ukuran}
+                onChange={(e) => setForm({ ...form, ukuran: e.target.value })}
                 disabled={loading || !canEdit}
               />
             </FormGroup>
@@ -299,9 +293,9 @@ const DataSupplier = () => {
           <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>Satuan *</Label>
-              <Input 
-                value={form.satuan} 
-                onChange={(e) => setForm({ ...form, satuan: e.target.value })} 
+              <Input
+                value={form.satuan}
+                onChange={(e) => setForm({ ...form, satuan: e.target.value })}
                 disabled={loading || !canEdit}
               />
             </FormGroup>
@@ -309,10 +303,10 @@ const DataSupplier = () => {
           <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>HPP *</Label>
-              <Input 
-                type="number" 
-                value={form.hpp} 
-                onChange={(e) => setForm({ ...form, hpp: e.target.value })} 
+              <Input
+                type="number"
+                value={form.hpp}
+                onChange={(e) => setForm({ ...form, hpp: e.target.value })}
                 disabled={loading || !canEdit}
               />
             </FormGroup>
@@ -320,10 +314,10 @@ const DataSupplier = () => {
           <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
             <FormGroup>
               <Label>HJK *</Label>
-              <Input 
-                type="number" 
-                value={form.hjk} 
-                onChange={(e) => setForm({ ...form, hjk: e.target.value })} 
+              <Input
+                type="number"
+                value={form.hjk}
+                onChange={(e) => setForm({ ...form, hjk: e.target.value })}
                 disabled={loading || !canEdit}
               />
             </FormGroup>
@@ -331,9 +325,9 @@ const DataSupplier = () => {
           <Col xs="12" md="3">
             <FormGroup>
               <Label>Keterangan</Label>
-              <Input 
-                value={form.keterangan} 
-                onChange={(e) => setForm({ ...form, keterangan: e.target.value })} 
+              <Input
+                value={form.keterangan}
+                onChange={(e) => setForm({ ...form, keterangan: e.target.value })}
                 disabled={loading || !canEdit}
               />
             </FormGroup>

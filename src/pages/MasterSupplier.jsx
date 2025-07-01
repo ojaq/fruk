@@ -90,42 +90,47 @@ const MasterSupplier = () => {
     { name: 'No', selector: (row, i) => i + 1, width: '60px', wrap: true },
     { name: 'Nama Supplier', selector: row => row.namaSupplier, wrap: true },
     { name: 'Nama Produk', selector: row => row.namaProduk, wrap: true },
-    { name: 'Jenis', selector: row => row.jenisProduk, wrap: true },
-    { name: 'Ukuran', selector: row => row.ukuran, wrap: true },
-    { name: 'Satuan', selector: row => row.satuan, wrap: true },
-    { 
-      name: 'HPP', 
+    {
+      name: 'Detail Produk',
+      selector: row => {return `${row.jenisProduk} ${row.ukuran} ${row.satuan}`},
+      sortable: true,
+      wrap: true
+    },
+    {
+      name: 'HPP',
       selector: row => {
         const hpp = parseFloat(row.hpp)
         return `Rp${hpp.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
-      }, 
-      wrap: true 
+      },
+      width: "120px",
+      wrap: true
     },
-    { 
-      name: 'HJK', 
+    {
+      name: 'HJK',
       selector: row => {
         const hjk = parseFloat(row.hjk)
         return `Rp${hjk.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
-      }, 
-      wrap: true 
+      },
+      width: "120px",
+      wrap: true
     },
     { name: 'Keterangan', selector: row => row.keterangan || '-', wrap: true },
-    { name: 'Bank', selector: row => row.namaBank, wrap: true },
-    { name: 'Penerima', selector: row => row.namaPenerima, wrap: true },
-    { name: 'No Rekening', selector: row => row.noRekening, wrap: true },
+    { name: 'Bank', selector: row => row.namaBank || '-', wrap: true, width: "150px", },
+    { name: 'Penerima', selector: row => row.namaPenerima || '-', wrap: true, width: "150px", },
+    { name: 'No Rekening', selector: row => row.noRekening || '-', wrap: true, width: "150px", },
     ...(user?.role === 'admin' || user?.role === 'superadmin' ? [{
       name: 'Aksi',
       cell: row => (
         <>
           <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row)} disabled={loading}>
-            <Edit size={14} />
+            <Edit size={16} />
           </Button>
           <Button size="sm" color="danger" onClick={() => handleDelete(row)} disabled={loading}>
-            <Trash2 size={14} />
+            <Trash2 size={16} />
           </Button>
         </>
       ),
-      width: '140px',
+      width: '130px',
       wrap: true
     }] : [])
   ]
