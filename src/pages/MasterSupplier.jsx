@@ -1,10 +1,23 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import DataTable from 'react-data-table-component'
-import { Row, Col, Input, Button } from 'reactstrap'
+import { Button, Col, Input, Label, Row, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
 import Swal from 'sweetalert2'
 import { Edit, Trash2 } from 'react-feather'
 import Select from 'react-select'
+import { FilePond, registerPlugin } from 'react-filepond'
+import 'filepond/dist/filepond.min.css'
+import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation'
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css'
+import { supabase } from '../supabaseClient'
+
+registerPlugin(
+  FilePondPluginImagePreview,
+  FilePondPluginFileValidateType,
+  FilePondPluginImageExifOrientation
+)
 
 const MasterSupplier = () => {
   const { productData, registeredUsers, user, saveProductData } = useAuth()
@@ -17,6 +30,8 @@ const MasterSupplier = () => {
   const [editOwner, setEditOwner] = useState(null)
   const [editIndex, setEditIndex] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [file, setFile] = useState([])
+  const [imagePreview, setImagePreview] = useState({ open: false, url: '' })
 
   useEffect(() => {
     const all = []
@@ -43,6 +58,7 @@ const MasterSupplier = () => {
 
   const handleEdit = (row) => {
     setEditForm({ ...row })
+    setFile([])
     setEditOwner(row._owner)
     setEditIndex(row._index)
     setEditModal(true)
@@ -51,8 +67,35 @@ const MasterSupplier = () => {
   const handleEditSave = async () => {
     setLoading(true)
     try {
+      let imageUrl = editForm.imageUrl
+      if (file.length > 0 && file[0].file) {
+        try {
+          const ext = file[0].file.name.split('.').pop()
+          const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 8)}.${ext}`
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(fileName, file[0].file, { upsert: true })
+          if (uploadError) {
+            console.error('Upload error:', uploadError)
+            if (uploadError.message?.includes('row-level security') || uploadError.statusCode === '403') {
+              Swal.fire('Error', 'Storage tidak dikonfigurasi dengan benar. Silakan hubungi admin untuk mengatur bucket storage.', 'error')
+            } else {
+              Swal.fire('Error', `Gagal upload gambar: ${uploadError.message}`, 'error')
+            }
+            setLoading(false)
+            return
+          }
+          const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
+          imageUrl = urlData.publicUrl
+        } catch (uploadErr) {
+          console.error('Upload exception:', uploadErr)
+          Swal.fire('Error', 'Gagal upload gambar. Silakan coba lagi.', 'error')
+          setLoading(false)
+          return
+        }
+      }
       const updatedList = [...(productData[editOwner] || [])]
-      updatedList[editIndex] = { ...editForm }
+      updatedList[editIndex] = { ...editForm, imageUrl }
       await saveProductData(editOwner, updatedList)
       setEditModal(false)
       Swal.fire('Berhasil', 'Data produk berhasil diupdate', 'success')
@@ -90,6 +133,19 @@ const MasterSupplier = () => {
     { name: 'No', selector: (row, i) => i + 1, width: '60px', wrap: true },
     { name: 'Nama Supplier', selector: row => row.namaSupplier, wrap: true },
     { name: 'Nama Produk', selector: row => row.namaProduk, wrap: true },
+    {
+      name: 'Gambar',
+      cell: row => row.imageUrl ? (
+        <img
+          src={row.imageUrl}
+          alt={row.namaProduk}
+          style={{ width: 60, height: 60, objectFit: 'cover', cursor: 'pointer', borderRadius: 6, border: '1px solid #eee' }}
+          onClick={() => setImagePreview({ open: true, url: row.imageUrl })}
+        />
+      ) : <span className="text-muted">-</span>,
+      width: '100px',
+      wrap: true
+    },
     {
       name: 'Detail Produk',
       selector: row => {return `${row.jenisProduk} ${row.ukuran} ${row.satuan}`},
@@ -210,69 +266,86 @@ const MasterSupplier = () => {
         />
       </div>
 
-      {/* Edit Modal */}
+
       {editModal && (
-        <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.3)' }} tabIndex="-1">
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Edit Produk</h5>
-                <Button close onClick={() => setEditModal(false)} />
-              </div>
-              <div className="modal-body">
-                <Row>
-                  <Col md="4">
-                    <label>Nama Produk</label>
-                    <Input value={editForm.namaProduk || ''} onChange={e => setEditForm(f => ({ ...f, namaProduk: e.target.value }))} />
-                  </Col>
-                  <Col md="2">
-                    <label>Jenis Produk</label>
-                    <Input value={editForm.jenisProduk || ''} onChange={e => setEditForm(f => ({ ...f, jenisProduk: e.target.value }))} />
-                  </Col>
-                  <Col md="2">
-                    <label>Ukuran</label>
-                    <Input value={editForm.ukuran || ''} onChange={e => setEditForm(f => ({ ...f, ukuran: e.target.value }))} />
-                  </Col>
-                  <Col md="2">
-                    <label>Satuan</label>
-                    <Input value={editForm.satuan || ''} onChange={e => setEditForm(f => ({ ...f, satuan: e.target.value }))} />
-                  </Col>
-                  <Col md="2">
-                    <label>HPP</label>
-                    <Input value={editForm.hpp || ''} onChange={e => setEditForm(f => ({ ...f, hpp: e.target.value }))} />
-                  </Col>
-                </Row>
-                <Row className="mt-2">
-                  <Col md="2">
-                    <label>HJK</label>
-                    <Input value={editForm.hjk || ''} onChange={e => setEditForm(f => ({ ...f, hjk: e.target.value }))} />
-                  </Col>
-                  <Col md="4">
-                    <label>Keterangan</label>
-                    <Input value={editForm.keterangan || ''} onChange={e => setEditForm(f => ({ ...f, keterangan: e.target.value }))} />
-                  </Col>
-                  <Col md="2">
-                    <label>Bank</label>
-                    <Input value={editForm.namaBank || ''} onChange={e => setEditForm(f => ({ ...f, namaBank: e.target.value }))} />
-                  </Col>
-                  <Col md="2">
-                    <label>Penerima</label>
-                    <Input value={editForm.namaPenerima || ''} onChange={e => setEditForm(f => ({ ...f, namaPenerima: e.target.value }))} />
-                  </Col>
-                  <Col md="2">
-                    <label>No Rekening</label>
-                    <Input value={editForm.noRekening || ''} onChange={e => setEditForm(f => ({ ...f, noRekening: e.target.value }))} />
-                  </Col>
-                </Row>
-              </div>
-              <div className="modal-footer">
-                <Button color="primary" onClick={handleEditSave} disabled={loading}>Simpan</Button>
-                <Button color="secondary" onClick={() => setEditModal(false)} disabled={loading}>Batal</Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Modal isOpen={editModal} toggle={() => setEditModal(!editModal)} centered size="lg">
+        <ModalHeader toggle={() => setEditModal(!editModal)}>
+          {editIndex !== null ? 'Edit Produk' : 'Tambah Produk'}
+        </ModalHeader>
+        <ModalBody>
+          <Row className="mb-2">
+            <Col xs="12" sm="6" md="12" className="mb-2 mb-md-3">
+              <Label>Nama Produk *</Label>
+              <Input value={editForm.namaProduk} onChange={e => setForm({ ...f, namaProduk: e.target.value })} />
+            </Col>
+            <Col xs="12" sm="6" md="4" className="mb-2 mb-md-3">
+              <Label>Jenis Produk *</Label>
+              <Input value={editForm.jenisProduk} onChange={e => setForm({ ...f, jenisProduk: e.target.value })} />
+            </Col>
+            <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
+              <Label>Ukuran *</Label>
+              <Input type="number" value={editForm.ukuran} onChange={e => setForm({ ...f, ukuran: e.target.value })} />
+            </Col>
+            <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
+              <Label>Satuan *</Label>
+              <Input value={editForm.satuan} onChange={e => setForm({ ...f, satuan: e.target.value })} />
+            </Col>
+            <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
+              <Label>HPP *</Label>
+              <Input type="number" value={editForm.hpp} onChange={e => setForm({ ...f, hpp: e.target.value })} />
+            </Col>
+            <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
+              <Label>HJK *</Label>
+              <Input type="number" value={editForm.hjk} onChange={e => setForm({ ...f, hjk: e.target.value })} />
+            </Col>
+            <Col xs="12" md="12" className="mb-2 mb-md-2">
+              <Label>Keterangan</Label>
+              <Input type="textarea" value={editForm.keterangan} onChange={e => setForm({ ...f, keterangan: e.target.value })} />
+            </Col>
+            <Col xs="12" md="12">
+              <Label>Gambar Produk</Label>
+              <FilePond
+                files={file}
+                onupdatefiles={setFile}
+                allowMultiple={false}
+                maxFiles={1}
+                name="image"
+                maxFileSize="25MB"
+                acceptedFileTypes={['image/jpeg', 'image/png', 'image/svg+xml']}
+                labelIdle={`<span class="text-center" style="cursor: pointer;">
+                  Drag & Drop your files or <span class='filepond--label-action'>Browse</span>
+                  <br/>
+                  <small class="text-muted d-block mb-0">Only image files (jpeg, png, svg) are allowed. </small>
+                </span>`}
+                labelFileTypeNotAllowed="File type not supported!"
+                credits={false}
+                allowImagePreview={true}
+              />
+              {editForm.imageUrl && file.length === 0 && (
+                <div className="text-center mt-2">
+                  <img src={editForm.imageUrl} alt="Preview" style={{ maxWidth: 180, maxHeight: 180, borderRadius: 8, border: '1px solid #eee' }} />
+                  <div className="text-muted small mt-1">Gambar saat ini</div>
+                </div>
+              )}
+            </Col>
+          </Row>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="primary" onClick={handleEditSave}>
+            Update
+          </Button>
+          <Button color="secondary" onClick={() => setEditModal(false)}>
+            Batal
+          </Button>
+        </ModalFooter>
+      </Modal>
       )}
+
+      <Modal isOpen={imagePreview.open} toggle={() => setImagePreview({ open: false, url: '' })} centered size="xl">
+        <ModalBody className="text-center p-0 bg-dark">
+          <img src={imagePreview.url} alt="Preview" style={{ maxWidth: '100%', maxHeight: '80vh', margin: 'auto', display: 'block' }} />
+        </ModalBody>
+      </Modal>
     </div>
   )
 }

@@ -1,10 +1,23 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Col, Form, FormGroup, Input, Label, Row } from 'reactstrap'
+import { Button, Col, Input, Label, Row, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap'
 import Swal from 'sweetalert2'
 import DataTable from 'react-data-table-component'
 import { Edit, Trash2, Check, X } from 'react-feather'
 import { useAuth } from '../context/AuthContext'
 import { useParams } from 'react-router-dom'
+import { FilePond, registerPlugin } from 'react-filepond'
+import 'filepond/dist/filepond.min.css'
+import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation'
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css'
+import { supabase } from '../supabaseClient'
+
+registerPlugin(
+  FilePondPluginImagePreview,
+  FilePondPluginFileValidateType,
+  FilePondPluginImageExifOrientation
+)
 
 const DataSupplier = () => {
   const { user, productData, saveProductData, registeredUsers } = useAuth()
@@ -16,8 +29,12 @@ const DataSupplier = () => {
     satuan: '',
     hpp: '',
     hjk: '',
-    keterangan: ''
+    keterangan: '',
+    imageUrl: ''
   })
+  const [modalOpen, setModalOpen] = useState(false)
+  const [file, setFile] = useState([])
+  const [imagePreview, setImagePreview] = useState({ open: false, url: '' })
 
   const username = targetUser || user?.name || ''
   const targetUserData = registeredUsers.find(u => u.name === username)
@@ -31,8 +48,7 @@ const DataSupplier = () => {
 
   const data = (productData[username] || []).slice().sort((a, b) => (a.namaProduk || '').toLowerCase().localeCompare((b.namaProduk || '').toLowerCase()))
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSave = async () => {
     setLoading(true)
 
     try {
@@ -42,7 +58,36 @@ const DataSupplier = () => {
         Swal.fire('Error', 'Field tidak boleh kosong!', 'error')
         return
       }
-
+      let imageUrl = form.imageUrl
+      if (file.length > 0 && file[0].file) {
+        try {
+          const ext = file[0].file.name.split('.').pop()
+          const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 8)}.${ext}`
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(fileName, file[0].file, { upsert: true })
+          
+          if (uploadError) {
+            console.error('Upload error:', uploadError)
+            if (uploadError.message?.includes('row-level security') || uploadError.statusCode === '403') {
+              Swal.fire('Error', 'Storage tidak dikonfigurasi dengan benar. Silakan hubungi admin untuk mengatur bucket storage.', 'error')
+            } else {
+              Swal.fire('Error', `Gagal upload gambar: ${uploadError.message}`, 'error')
+            }
+            setLoading(false)
+            return
+          }
+          
+          const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
+          imageUrl = urlData.publicUrl
+        } catch (uploadErr) {
+          console.error('Upload exception:', uploadErr)
+          Swal.fire('Error', 'Gagal upload gambar. Silakan coba lagi.', 'error')
+          setLoading(false)
+          return
+        }
+      }
       const profileDefaults = {
         namaSupplier: targetUserData?.profile?.namaSupplier || user?.profile?.namaSupplier || '',
         namaBank: targetUserData?.profile?.namaBank || user?.profile?.namaBank || '',
@@ -52,6 +97,7 @@ const DataSupplier = () => {
 
       const newItem = {
         ...form,
+        imageUrl,
         aktif: true,
         ...profileDefaults
       }
@@ -74,9 +120,12 @@ const DataSupplier = () => {
         satuan: '',
         hpp: '',
         hjk: '',
-        keterangan: ''
+        keterangan: '',
+        imageUrl: ''
       })
+      setFile([])
       setEditIndex(null)
+      setModalOpen(false)
     } catch (error) {
       console.error('Error saving product:', error)
       Swal.fire('Error', 'Gagal menyimpan data', 'error')
@@ -87,7 +136,25 @@ const DataSupplier = () => {
 
   const handleEdit = (row, index) => {
     setForm(row)
+    setFile([])
     setEditIndex(index)
+    setModalOpen(true)
+  }
+
+  const handleAdd = () => {
+    setForm({
+      namaProduk: '',
+      jenisProduk: '',
+      ukuran: '',
+      satuan: '',
+      hpp: '',
+      hjk: '',
+      keterangan: '',
+      imageUrl: ''
+    })
+    setFile([])
+    setEditIndex(null)
+    setModalOpen(true)
   }
 
   const handleDelete = async (index) => {
@@ -213,6 +280,19 @@ const DataSupplier = () => {
       wrap: true
     },
     {
+      name: 'Gambar',
+      cell: row => row.imageUrl ? (
+        <img
+          src={row.imageUrl}
+          alt={row.namaProduk}
+          style={{ width: 60, height: 60, objectFit: 'cover', cursor: 'pointer', borderRadius: 6, border: '1px solid #eee' }}
+          onClick={() => setImagePreview({ open: true, url: row.imageUrl })}
+        />
+      ) : <span className="text-muted">-</span>,
+      width: '100px',
+      wrap: true
+    },
+    {
       name: 'Aktif?',
       cell: (row, i) => (
         <Button size="sm" color={row.aktif ? "success" : "danger"} onClick={() => toggleAktif(i)} disabled={loading || !canEdit}>
@@ -257,82 +337,7 @@ const DataSupplier = () => {
           {canEdit ? 'Mode Admin - Anda dapat mengedit data supplier ini' : 'Mode View - Anda hanya dapat melihat data'}
         </p>
       )}
-      <Form onSubmit={handleSubmit} className="mb-4">
-        <Row className="mb-2">
-          <Col xs="12" sm="6" md="3" className="mb-2 mb-md-0">
-            <FormGroup>
-              <Label>Nama Produk *</Label>
-              <Input
-                value={form.namaProduk}
-                onChange={(e) => setForm({ ...form, namaProduk: e.target.value })}
-                disabled={loading || !canEdit}
-              />
-            </FormGroup>
-          </Col>
-          <Col xs="12" sm="6" md="2" className="mb-2 mb-md-0">
-            <FormGroup>
-              <Label>Jenis Produk *</Label>
-              <Input
-                value={form.jenisProduk}
-                onChange={(e) => setForm({ ...form, jenisProduk: e.target.value })}
-                disabled={loading || !canEdit}
-              />
-            </FormGroup>
-          </Col>
-          <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
-            <FormGroup>
-              <Label>Ukuran *</Label>
-              <Input
-                type="number"
-                value={form.ukuran}
-                onChange={(e) => setForm({ ...form, ukuran: e.target.value })}
-                disabled={loading || !canEdit}
-              />
-            </FormGroup>
-          </Col>
-          <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
-            <FormGroup>
-              <Label>Satuan *</Label>
-              <Input
-                value={form.satuan}
-                onChange={(e) => setForm({ ...form, satuan: e.target.value })}
-                disabled={loading || !canEdit}
-              />
-            </FormGroup>
-          </Col>
-          <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
-            <FormGroup>
-              <Label>HPP *</Label>
-              <Input
-                type="number"
-                value={form.hpp}
-                onChange={(e) => setForm({ ...form, hpp: e.target.value })}
-                disabled={loading || !canEdit}
-              />
-            </FormGroup>
-          </Col>
-          <Col xs="6" sm="3" md="1" className="mb-2 mb-md-0">
-            <FormGroup>
-              <Label>HJK *</Label>
-              <Input
-                type="number"
-                value={form.hjk}
-                onChange={(e) => setForm({ ...form, hjk: e.target.value })}
-                disabled={loading || !canEdit}
-              />
-            </FormGroup>
-          </Col>
-          <Col xs="12" md="3">
-            <FormGroup>
-              <Label>Keterangan</Label>
-              <Input
-                value={form.keterangan}
-                onChange={(e) => setForm({ ...form, keterangan: e.target.value })}
-                disabled={loading || !canEdit}
-              />
-            </FormGroup>
-          </Col>
-        </Row>
+      <div className="mb-4 mt-3">
         <Row className="mb-3">
           <Col xs="12" md="6" className="mb-2 mb-md-0">
             <Input
@@ -345,8 +350,8 @@ const DataSupplier = () => {
           <Col xs="12" md="6" className="text-end">
             {canEdit && (
               <>
-                <Button type="submit" color="primary" className="me-2" disabled={loading}>
-                  {loading ? 'Loading...' : (editIndex !== null ? 'Update' : 'Tambah')}
+                <Button type="submit" color="primary" className="me-2" disabled={loading} onClick={handleAdd}>
+                  Tambah Produk
                 </Button>
                 <Button color="success" className="me-2" onClick={() => toggleAllAktif(true)} disabled={loading}>
                   Aktifkan Semua
@@ -361,7 +366,7 @@ const DataSupplier = () => {
             </Button>
           </Col>
         </Row>
-      </Form>
+      </div>
 
       <div className="border overflow-auto" style={{ minHeight: 200 }}>
         <DataTable
@@ -376,6 +381,85 @@ const DataSupplier = () => {
           progressPending={loading}
         />
       </div>
+
+      <Modal isOpen={modalOpen} toggle={() => setModalOpen(!modalOpen)} centered size="lg">
+        <ModalHeader toggle={() => setModalOpen(!modalOpen)}>
+          {editIndex !== null ? 'Edit Produk' : 'Tambah Produk'}
+        </ModalHeader>
+        <ModalBody>
+          <Row className="mb-2">
+            <Col xs="12" sm="6" md="12" className="mb-2 mb-md-3">
+              <Label>Nama Produk *</Label>
+              <Input value={form.namaProduk} onChange={e => setForm({ ...form, namaProduk: e.target.value })} disabled={loading} />
+            </Col>
+            <Col xs="12" sm="6" md="4" className="mb-2 mb-md-3">
+              <Label>Jenis Produk *</Label>
+              <Input value={form.jenisProduk} onChange={e => setForm({ ...form, jenisProduk: e.target.value })} disabled={loading} />
+            </Col>
+            <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
+              <Label>Ukuran *</Label>
+              <Input type="number" value={form.ukuran} onChange={e => setForm({ ...form, ukuran: e.target.value })} disabled={loading} />
+            </Col>
+            <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
+              <Label>Satuan *</Label>
+              <Input value={form.satuan} onChange={e => setForm({ ...form, satuan: e.target.value })} disabled={loading} />
+            </Col>
+            <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
+              <Label>HPP *</Label>
+              <Input type="number" value={form.hpp} onChange={e => setForm({ ...form, hpp: e.target.value })} disabled={loading} />
+            </Col>
+            <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
+              <Label>HJK *</Label>
+              <Input type="number" value={form.hjk} onChange={e => setForm({ ...form, hjk: e.target.value })} disabled={loading} />
+            </Col>
+            <Col xs="12" md="12" className="mb-2 mb-md-2">
+              <Label>Keterangan</Label>
+              <Input type="textarea" value={form.keterangan} onChange={e => setForm({ ...form, keterangan: e.target.value })} disabled={loading} />
+            </Col>
+            <Col xs="12" md="12">
+              <Label>Gambar Produk</Label>
+              <FilePond
+                files={file}
+                onupdatefiles={setFile}
+                allowMultiple={false}
+                maxFiles={1}
+                name="image"
+                maxFileSize="25MB"
+                acceptedFileTypes={['image/jpeg', 'image/png', 'image/svg+xml']}
+                labelIdle={`<span class="text-center" style="cursor: pointer;">
+                  Drag & Drop your files or <span class='filepond--label-action'>Browse</span>
+                  <br/>
+                  <small class="text-muted d-block mb-0">Only image files (jpeg, png, svg) are allowed. </small>
+                </span>`}
+                labelFileTypeNotAllowed="File type not supported!"
+                credits={false}
+                allowImagePreview={true}
+                disabled={loading}
+              />
+              {form.imageUrl && file.length === 0 && (
+                <div className="text-center mt-2">
+                  <img src={form.imageUrl} alt="Preview" style={{ maxWidth: 180, maxHeight: 180, borderRadius: 8, border: '1px solid #eee' }} />
+                  <div className="text-muted small mt-1">Gambar saat ini</div>
+                </div>
+              )}
+            </Col>
+          </Row>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="primary" onClick={handleSave} disabled={loading}>
+            {loading ? 'Loading...' : (editIndex !== null ? 'Update' : 'Tambah')}
+          </Button>
+          <Button color="secondary" onClick={() => setModalOpen(false)} disabled={loading}>
+            Batal
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={imagePreview.open} toggle={() => setImagePreview({ open: false, url: '' })} centered size="xl">
+        <ModalBody className="text-center p-0 bg-dark">
+          <img src={imagePreview.url} alt="Preview" style={{ maxWidth: '100%', maxHeight: '80vh', margin: 'auto', display: 'block' }} />
+        </ModalBody>
+      </Modal>
     </div>
   )
 }
