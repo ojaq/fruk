@@ -33,6 +33,10 @@ const MasterSupplier = () => {
   const [file, setFile] = useState([])
   const [imagePreview, setImagePreview] = useState({ open: false, url: '' })
 
+  const allProducts = Object.values(productData).flat()
+  const uniqueNamaProduk = [...new Set(allProducts.map(d => d.namaProduk))].sort((a, b) => a.localeCompare(b))
+  const uniqueJenisProduk = [...new Set(allProducts.map(d => d.jenisProduk))].sort((a, b) => a.localeCompare(b))
+
   useEffect(() => {
     const all = []
     Object.entries(productData).forEach(([username, items]) => {
@@ -276,31 +280,37 @@ const MasterSupplier = () => {
           <Row className="mb-2">
             <Col xs="12" sm="6" md="12" className="mb-2 mb-md-3">
               <Label>Nama Produk *</Label>
-              <Input value={editForm.namaProduk} onChange={e => setForm({ ...f, namaProduk: e.target.value })} />
+              <Input value={editForm.namaProduk} onChange={e => setEditForm(f => ({ ...f, namaProduk: e.target.value }))} list="nama-produk-suggestions" />
+              <datalist id="nama-produk-suggestions">
+                {uniqueNamaProduk.map((n, i) => <option key={i} value={n} />)}
+              </datalist>
             </Col>
             <Col xs="12" sm="6" md="4" className="mb-2 mb-md-3">
               <Label>Jenis Produk *</Label>
-              <Input value={editForm.jenisProduk} onChange={e => setForm({ ...f, jenisProduk: e.target.value })} />
+              <Input value={editForm.jenisProduk} onChange={e => setEditForm(f => ({ ...f, jenisProduk: e.target.value }))} list="jenis-produk-suggestions" />
+              <datalist id="jenis-produk-suggestions">
+                {uniqueJenisProduk.map((j, i) => <option key={i} value={j} />)}
+              </datalist>
             </Col>
             <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
               <Label>Ukuran *</Label>
-              <Input type="number" value={editForm.ukuran} onChange={e => setForm({ ...f, ukuran: e.target.value })} />
+              <Input type="number" value={editForm.ukuran} onChange={e => setEditForm({ ...editForm, ukuran: e.target.value })} />
             </Col>
             <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
               <Label>Satuan *</Label>
-              <Input value={editForm.satuan} onChange={e => setForm({ ...f, satuan: e.target.value })} />
+              <Input value={editForm.satuan} onChange={e => setEditForm({ ...editForm, satuan: e.target.value })} />
             </Col>
             <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
               <Label>HPP *</Label>
-              <Input type="number" value={editForm.hpp} onChange={e => setForm({ ...f, hpp: e.target.value })} />
+              <Input type="number" value={editForm.hpp} onChange={e => setEditForm({ ...editForm, hpp: e.target.value })} />
             </Col>
             <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
               <Label>HJK *</Label>
-              <Input type="number" value={editForm.hjk} onChange={e => setForm({ ...f, hjk: e.target.value })} />
+              <Input type="number" value={editForm.hjk} onChange={e => setEditForm({ ...editForm, hjk: e.target.value })} />
             </Col>
             <Col xs="12" md="12" className="mb-2 mb-md-2">
               <Label>Keterangan</Label>
-              <Input type="textarea" value={editForm.keterangan} onChange={e => setForm({ ...f, keterangan: e.target.value })} />
+              <Input type="textarea" value={editForm.keterangan} onChange={e => setEditForm({ ...editForm, keterangan: e.target.value })} />
             </Col>
             <Col xs="12" md="12">
               <Label>Gambar Produk</Label>

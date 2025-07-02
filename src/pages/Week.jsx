@@ -29,6 +29,8 @@ const Week = () => {
       .flatMap(k => weekData[k] || [])
     : []
 
+  const uniquePemesanThisWeek = !isAllWeek ? [...new Set((weekData[sheetName] || []).map(d => d.pemesan))].sort((a, b) => a.localeCompare(b)) : []
+
   useEffect(() => {
     if (isAllWeek) {
       const sorted = (allWeekEntries || []).slice().sort((a, b) => (a.pemesan || '').toLowerCase().localeCompare((b.pemesan || '').toLowerCase()))
@@ -221,7 +223,15 @@ const Week = () => {
                 value={form.pemesan}
                 onChange={e => setForm(f => ({ ...f, pemesan: e.target.value }))}
                 disabled={loading || isAllWeek}
+                list={!isAllWeek ? 'pemesan-suggestions' : undefined}
               />
+              {!isAllWeek && (
+                <datalist id="pemesan-suggestions">
+                  {uniquePemesanThisWeek.map((p, i) => (
+                    <option key={i} value={p} />
+                  ))}
+                </datalist>
+              )}
             </FormGroup>
           </Col>
           <Col xs="12" sm="6" md="3" className="mb-2 mb-md-0">
