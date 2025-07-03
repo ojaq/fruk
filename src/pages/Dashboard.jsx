@@ -315,6 +315,15 @@ const Dashboard = () => {
 
         <Button color="danger" onClick={handleLogout}>Logout</Button>
       </div>
+      <div style={{
+        position: 'fixed',
+        bottom: '15px',
+        right: '15px',
+        fontSize: '0.9rem',
+        color: '#888'
+      }}>
+        Made by Abdur Razzaq - 082125970813
+      </div>
     </div>
   )
 }
