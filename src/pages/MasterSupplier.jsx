@@ -198,7 +198,7 @@ const MasterSupplier = () => {
       name: 'Aksi',
       cell: row => (
         <>
-          <Button size="sm" color={row.aktif ? "success" : "danger"} onClick={() => toggleAktif(i)} disabled={loading}>
+          <Button size="sm" color={row.aktif ? "success" : "danger"} className="me-2" onClick={() => toggleAktif(i)} disabled={loading}>
             {row.aktif ? <Check size={16} /> : <X size={16} />}
           </Button>
           <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row)} disabled={loading}>
