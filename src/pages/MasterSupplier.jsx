@@ -68,6 +68,21 @@ const MasterSupplier = () => {
     setEditModal(true)
   }
 
+  const toggleAktif = async (index) => {
+    setLoading(true)
+    try {
+      const updated = [...data]
+      updated[index].aktif = !updated[index].aktif
+      await saveProductData(username, updated)
+      Swal.fire('Berhasil', `Produk berhasil di-${updated[index].aktif ? 'aktifkan' : 'nonaktifkan'}`, 'success')
+    } catch (error) {
+      console.error('Error toggling product status:', error)
+      Swal.fire('Error', 'Gagal mengubah status produk', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleEditSave = async () => {
     setLoading(true)
     try {
@@ -178,10 +193,14 @@ const MasterSupplier = () => {
     { name: 'Bank', selector: row => row.namaBank || '-', wrap: true, width: "150px", },
     { name: 'Penerima', selector: row => row.namaPenerima || '-', wrap: true, width: "150px", },
     { name: 'No Rekening', selector: row => row.noRekening || '-', wrap: true, width: "150px", },
-    ...(user?.role === 'admin' || user?.role === 'superadmin' ? [{
+    ...(user?.role === 'admin' || user?.role === 'superadmin' ? [
+    {
       name: 'Aksi',
       cell: row => (
         <>
+          <Button size="sm" color={row.aktif ? "success" : "danger"} onClick={() => toggleAktif(i)} disabled={loading || !canEdit}>
+            {row.aktif ? <Check size={16} /> : <X size={16} />}
+          </Button>
           <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row)} disabled={loading}>
             <Edit size={16} />
           </Button>
