@@ -209,7 +209,7 @@ const MasterSupplier = () => {
           </Button>
         </>
       ),
-      width: '130px',
+      width: '150px',
       wrap: true
     }] : [])
   ]
