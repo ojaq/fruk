@@ -133,7 +133,7 @@ const Week = () => {
 
   const handleDelete = async index => {
     const result = await Swal.fire({
-      title: `Hapus baris ke-${index + 1}?`,
+      title: `Hapus data \n "${data[index].pemesan} - ${data[index].produkLabel}"?`,
       text: 'Anda akan menghapus data ini.',
       icon: 'warning',
       showCancelButton: true,
