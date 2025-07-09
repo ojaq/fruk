@@ -73,7 +73,7 @@ const Week = () => {
     setForm(f => ({
       ...f,
       jumlah: val,
-      bayar: f.produk ? jumlah * Number(f.produk.data.hjk) : ''
+      bayar: f.produkLabel ? jumlah * Number(f.produkLabel.data.hjk) : ''
     }))
   }
 
@@ -82,19 +82,19 @@ const Week = () => {
     setLoading(true)
 
     try {
-      const { pemesan, produk, jumlah } = form
-      if (!pemesan || !produk || !jumlah) {
+      const { pemesan, produkLabel, jumlah } = form
+      if (!pemesan || !produkLabel || !jumlah) {
         Swal.fire('Gagal', 'Semua field * wajib diisi', 'error')
         return
       }
 
       const entry = {
         pemesan,
-        produkLabel: produk.label,
+        produkLabel: produkLabel.label,
         catatan: form.catatan,
         jumlah,
         bayar: form.bayar,
-        namaSupplier: produk.data.namaSupplier
+        namaSupplier: produkLabel.data.namaSupplier
       }
 
       const updated = [...data]
