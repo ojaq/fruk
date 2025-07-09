@@ -68,13 +68,50 @@ const MasterSupplier = () => {
     setEditModal(true)
   }
 
-  const toggleAktif = async (index) => {
+  const toggleAktif = async (row) => {
+    const isActivating = !row.aktif
+
+    if (!isActivating) {
+      const result = await Swal.fire({
+        html: `
+          <h4>Nonaktifkan produk</h4>
+          <strong>"${row.namaProduk}"?</strong><br/><br/>
+          Produk akan disembunyikan dari halaman ini.<br/>
+          Kamu bisa mengaktifkannya kembali di halaman<br/><br/>
+          "<strong>Data Supplier - ${row._owner}</strong>".
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Lanjutkan',
+        cancelButtonText: 'Batal'
+      })
+      if (!result.isConfirmed) return
+    }
+
     setLoading(true)
     try {
-      const updated = [...data]
-      updated[index].aktif = !updated[index].aktif
-      await saveProductData(username, updated)
-      Swal.fire('Berhasil', `Produk berhasil di-${updated[index].aktif ? 'aktifkan' : 'nonaktifkan'}`, 'success')
+      const updatedList = [...(productData[row._owner] || [])]
+      updatedList[row._index].aktif = isActivating
+      await saveProductData(row._owner, updatedList)
+
+      const actionText = isActivating ? 'diaktifkan' : 'dinonaktifkan'
+      const revertStatus = !isActivating
+
+      const result = await Swal.fire({
+        title: 'Berhasil',
+        text: `Produk "${row.namaProduk}" berhasil ${actionText}.`,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'Undo',
+        cancelButtonText: 'Tutup'
+      })
+
+      if (result.isConfirmed) {
+        const revertedList = [...(productData[row._owner] || [])]
+        revertedList[row._index].aktif = revertStatus
+        await saveProductData(row._owner, revertedList)
+        Swal.fire('Dibatalkan', `Status produk dikembalikan ke sebelumnya.`, 'info')
+      }
     } catch (error) {
       console.error('Error toggling product status:', error)
       Swal.fire('Error', 'Gagal mengubah status produk', 'error')
@@ -196,9 +233,9 @@ const MasterSupplier = () => {
     ...(user?.role === 'admin' || user?.role === 'superadmin' ? [
     {
       name: 'Aksi',
-      cell: row => (
+      cell: (row, i) => (
         <>
-          <Button size="sm" color={row.aktif ? "success" : "danger"} className="me-2" onClick={() => toggleAktif(i)} disabled={loading}>
+          <Button size="sm" color={row.aktif ? "success" : "danger"} className="me-2" onClick={() => toggleAktif(row)} disabled={loading}>
             {row.aktif ? <Check size={16} /> : <X size={16} />}
           </Button>
           <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row)} disabled={loading}>
