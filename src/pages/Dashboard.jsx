@@ -6,7 +6,7 @@ import Select from 'react-select'
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  const { user, applyAsAdmin, logout, profile, toggleProfileModal, registeredUsers, handleAdminDecision, cancelAdminRequest } = useAuth()
+  const { user, applyAsAdmin, logout, profile, toggleProfileModal, registeredUsers, handleAdminDecision, cancelAdminRequest, bazaarData } = useAuth()
   const [isProfileEmpty, setIsProfileEmpty] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState(null)
   
@@ -61,6 +61,18 @@ const Dashboard = () => {
     navigate(`/supplier-invoice`)
   }
 
+  const handleBazaarAnnouncement = () => {
+    navigate(`/bazaar-announcement`)
+  }
+
+  const handleBazaarRegistration = () => {
+    navigate(`/bazaar-registration`)
+  }
+
+  const handleBazaarManagement = () => {
+    navigate(`/bazaar-management`)
+  }
+
   useEffect(() => {
     if (user?.role === 'supplier') {
       const { namaSupplier, namaBank, namaPenerima, noRekening } = user.profile || {}
@@ -75,6 +87,24 @@ const Dashboard = () => {
       label: `${u.name}${u.profile?.namaSupplier ? ` (${u.profile.namaSupplier})` : ''}`,
       value: u.name
     }))
+
+  const pendingRegistrations = (bazaarData?.registrations || []).filter(r => r.status === 'pending').length
+
+  let needsRegistration = false
+  let unregisteredAnnouncements = []
+  let rejectedAnnouncements = []
+  if ((user.role === 'supplier') || (user.role === 'admin' && !adminView)) {
+    const activeAnnouncements = (bazaarData?.announcements || []).filter(a => a.status === 'active')
+    const myRegs = (bazaarData?.registrations || []).filter(
+      r => r.supplierName && r.supplierName.trim().toLowerCase() === user.name.trim().toLowerCase()
+    )
+    needsRegistration = activeAnnouncements.some(a => {
+      const reg = myRegs.find(r => r.announcementId === a.id)
+      if (!reg) unregisteredAnnouncements.push(a)
+      else if (reg.status === 'rejected') rejectedAnnouncements.push(a)
+      return !reg || reg.status === 'rejected'
+    })
+  }
 
   return (
     <div className="container mt-5">
@@ -197,6 +227,19 @@ const Dashboard = () => {
                 All Supplier Invoice
               </Button>
             </li>
+            <li className="mb-2">Kelola pengumuman bazaar di <strong>Bazaar Pengumuman</strong>.
+              <Button color="primary" size="sm" className="ms-2" onClick={handleBazaarAnnouncement}>
+                Bazaar Pengumuman
+              </Button>
+            </li>
+            <li className="mb-2">Kelola pendaftaran bazaar di <strong>Kelola Pendaftaran Bazaar</strong>.
+              <Button color="primary" size="sm" className="ms-2 position-relative" onClick={handleBazaarManagement}>
+                Kelola Pendaftaran Bazaar
+              </Button>
+              {pendingRegistrations > 0 && (
+                <span className="badge bg-danger py-2 px-3 ms-2">{pendingRegistrations}</span>
+              )}
+            </li>
           </ul>
         </>
       )}
@@ -264,6 +307,25 @@ const Dashboard = () => {
               <Button color="primary" size="sm" className="ms-2" onClick={handleSupplierInvoice}>
                 All Supplier Invoice
               </Button>
+            </li>
+            <li className="mb-2">Daftar untuk bazaar di <strong>Daftar Bazaar</strong>.
+              <Button color="primary" size="sm" className="ms-2 position-relative" onClick={handleBazaarRegistration}>
+                Daftar Bazaar
+              </Button>
+              {(unregisteredAnnouncements.length > 0 || rejectedAnnouncements.length > 0) && (
+                <>
+                  {unregisteredAnnouncements.length > 0 && (
+                    <div className="badge bg-warning text-black py-2 px-3 ms-2">
+                      Belum daftar: {unregisteredAnnouncements.map(a => a.title).join(', ')}
+                    </div>
+                  )}
+                  {rejectedAnnouncements.length > 0 && (
+                    <div className="badge bg-danger py-2 px-3 ms-2">
+                      Ditolak: {rejectedAnnouncements.map(a => a.title).join(', ')}
+                    </div>
+                  )}
+                </>
+              )}
             </li>
           </ul>
         </>

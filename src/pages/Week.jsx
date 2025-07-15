@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import { useParams } from 'react-router-dom'
 
 const Week = () => {
-  const { productData, registeredUsers, weekData, saveWeekData } = useAuth()
+  const { productData, registeredUsers, weekData, saveWeekData, bazaarData } = useAuth()
   const { num } = useParams()
   const sheetName = `W${num}`
 
@@ -31,6 +31,18 @@ const Week = () => {
 
   const uniquePemesanThisWeek = !isAllWeek ? [...new Set((weekData[sheetName] || []).map(d => d.pemesan))].sort((a, b) => a.localeCompare(b)) : []
 
+  const currentAnnouncement = (bazaarData.announcements || []).find(a => a.weekId === sheetName && a.status === 'active')
+  const approvedRegs = (bazaarData.registrations || []).filter(r => r.announcementId === currentAnnouncement?.id && r.status === 'approved')
+  const allowedProducts = []
+  approvedRegs.forEach(reg => {
+    (reg.selectedProducts || []).forEach(prod => {
+      allowedProducts.push({
+        ...prod,
+        owner: reg.supplierName
+      })
+    })
+  })
+
   useEffect(() => {
     if (isAllWeek) {
       const sorted = (allWeekEntries || []).slice().sort((a, b) => (a.pemesan || '').toLowerCase().localeCompare((b.pemesan || '').toLowerCase()))
@@ -42,22 +54,26 @@ const Week = () => {
   }, [weekData, sheetName, isAllWeek])
 
   useEffect(() => {
-    const all = []
-    Object.entries(productData).forEach(([username, items]) => {
-      const user = registeredUsers.find(u => u.name === username)
-      if (!user) return
-      items.forEach((item, i) => {
-        if (item.aktif) {
-          all.push({
-            label: `${item.namaProduk} ${item.ukuran} ${item.satuan}`,
-            value: `${username}-${i}`,
-            data: item
-          })
-        }
+    if (currentAnnouncement) {
+      setProdukOptions(allowedProducts)
+    } else {
+      const all = []
+      Object.entries(productData).forEach(([username, items]) => {
+        const user = registeredUsers.find(u => u.name === username)
+        if (!user) return
+        items.forEach((item, i) => {
+          if (item.aktif) {
+            all.push({
+              label: `${item.namaProduk} ${item.ukuran} ${item.satuan}`,
+              value: `${username}-${i}`,
+              data: item
+            })
+          }
+        })
       })
-    })
-    setProdukOptions(all)
-  }, [productData, registeredUsers])
+      setProdukOptions(all)
+    }
+  }, [productData, registeredUsers, currentAnnouncement, allowedProducts])
 
   const handleSelectProduk = option => {
     const harga = option.data.hjk

@@ -8,6 +8,9 @@ import CustomerInvoice from '../pages/CustomerInvoice'
 import SupplierInvoice from '../pages/SupplierInvoice'
 import MasterSupplier from '../pages/MasterSupplier'
 import DataSupplier from '../pages/DataSupplier'
+import BazaarAnnouncement from '../pages/BazaarAnnouncement'
+import BazaarRegistration from '../pages/BazaarRegistration'
+import BazaarManagement from '../pages/BazaarManagement'
 import PrivateRoutes from './PrivateRoutes'
 
 const AppRoutes = () => {
@@ -64,6 +67,30 @@ const AppRoutes = () => {
         element={
           <PrivateRoutes>
             <SupplierInvoice />
+          </PrivateRoutes>
+        }
+      />
+      <Route
+        path="/bazaar-announcement"
+        element={
+          <PrivateRoutes>
+            <BazaarAnnouncement />
+          </PrivateRoutes>
+        }
+      />
+      <Route
+        path="/bazaar-registration"
+        element={
+          <PrivateRoutes>
+            <BazaarRegistration />
+          </PrivateRoutes>
+        }
+      />
+      <Route
+        path="/bazaar-management"
+        element={
+          <PrivateRoutes>
+            <BazaarManagement />
           </PrivateRoutes>
         }
       />

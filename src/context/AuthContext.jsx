@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [productData, setProductData] = useState({})
   const [weekData, setWeekData] = useState({})
+  const [bazaarData, setBazaarData] = useState({})
 
   const toggleProfileModal = () => setProfileModalOpen(prev => !prev)
 
@@ -89,13 +90,35 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const fetchBazaarData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bazaar_data')
+        .select('*')
+
+      if (error) {
+        console.error('Error fetching bazaar data:', error)
+        return
+      }
+
+      if (data && data.length > 0) {
+        setBazaarData(data[0].data || {})
+      } else {
+        setBazaarData({})
+      }
+    } catch (error) {
+      console.error('Error fetching bazaar data:', error)
+    }
+  }
+
   useEffect(() => {
     const initializeData = async () => {
       try {
         await Promise.all([
           fetchUsers(),
           fetchProducts(),
-          fetchWeeks()
+          fetchWeeks(),
+          fetchBazaarData()
         ])
 
         const storedUser = localStorage.getItem('currentUser')
@@ -235,6 +258,25 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const saveBazaarData = async (newBazaarData) => {
+    try {
+      const { error } = await supabase
+        .from('bazaar_data')
+        .upsert([{ id: 1, data: newBazaarData }])
+
+      if (error) {
+        console.error('Error saving bazaar data:', error)
+        Swal.fire('Error', 'Gagal menyimpan data bazaar', 'error')
+        return
+      }
+
+      setBazaarData(newBazaarData)
+    } catch (error) {
+      console.error('Error saving bazaar data:', error)
+      Swal.fire('Error', 'Gagal menyimpan data bazaar', 'error')
+    }
+  }
+
   const handleAdminDecision = async (name, accepted) => {
     try {
       const { error } = await supabase
@@ -315,6 +357,8 @@ export const AuthProvider = ({ children }) => {
       saveProductData,
       weekData,
       saveWeekData,
+      bazaarData,
+      saveBazaarData,
       userList,
       handleAdminDecision,
       cancelAdminRequest

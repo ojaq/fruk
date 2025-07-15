@@ -207,11 +207,14 @@ const DataSupplier = () => {
   }
 
   const toggleAktif = async (index) => {
-    const isActivating = !index.aktif
+    const isActivating = !data[index].aktif
 
     if (!isActivating) {
       const result = await Swal.fire({
-        title: `Nonaktifkan produk \n "${index.namaProduk}"?`,
+        html: `
+          <h4>Nonaktifkan produk</h4>
+          <strong>\"${data[index].namaProduk}\"?</strong>
+        `,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Lanjutkan',
@@ -222,9 +225,24 @@ const DataSupplier = () => {
     setLoading(true)
     try {
       const updated = [...data]
-      updated[index].aktif = !updated[index].aktif
+      updated[index].aktif = isActivating
       await saveProductData(username, updated)
-      Swal.fire('Berhasil', `Produk "${index.namaProduk}" berhasil di-${updated[index].aktif ? 'aktifkan' : 'nonaktifkan'}`, 'success')
+      const actionText = isActivating ? 'diaktifkan' : 'dinonaktifkan'
+      const revertStatus = !isActivating
+      const result = await Swal.fire({
+        title: 'Berhasil',
+        text: `Produk \"${updated[index].namaProduk}\" berhasil ${actionText}.`,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'Undo',
+        cancelButtonText: 'Tutup'
+      })
+      if (result.isConfirmed) {
+        const reverted = [...data]
+        reverted[index].aktif = revertStatus
+        await saveProductData(username, reverted)
+        Swal.fire('Dibatalkan', 'Status produk dikembalikan ke sebelumnya.', 'info')
+      }
     } catch (error) {
       console.error('Error toggling product status:', error)
       Swal.fire('Error', 'Gagal mengubah status produk', 'error')
