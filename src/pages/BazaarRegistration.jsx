@@ -19,6 +19,23 @@ function formatDateID(dateStr) {
   if (isNaN(d)) return dateStr
   return `${d.getDate().toString().padStart(2, '0')} ${MONTHS_ID[d.getMonth()]} ${d.getFullYear()}`
 }
+function formatDateRangeID(startStr, endStr) {
+  if (!startStr && !endStr) return ''
+  if (!startStr) return formatDateID(endStr)
+  if (!endStr) return formatDateID(startStr)
+  const start = new Date(startStr)
+  const end = new Date(endStr)
+  if (isNaN(start) || isNaN(end)) return `${startStr} - ${endStr}`
+  if (start.getFullYear() === end.getFullYear()) {
+    if (start.getMonth() === end.getMonth()) {
+      return `${start.getDate()}-${end.getDate()} ${MONTHS_ID[start.getMonth()]} ${start.getFullYear()}`
+    } else {
+      return `${start.getDate()} ${MONTHS_ID[start.getMonth()]} - ${end.getDate()} ${MONTHS_ID[end.getMonth()]} ${start.getFullYear()}`
+    }
+  } else {
+    return `${start.getDate()} ${MONTHS_ID[start.getMonth()]} ${start.getFullYear()} - ${end.getDate()} ${MONTHS_ID[end.getMonth()]} ${end.getFullYear()}`
+  }
+}
 function formatDateTimeID(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
@@ -342,7 +359,7 @@ const BazaarRegistration = () => {
           )}
         </>
       ),
-      width: '150px',
+      width: '200px',
       wrap: true
     }
   ]
@@ -356,7 +373,7 @@ const BazaarRegistration = () => {
   })
 
   const announcementOptions = activeAnnouncements.map(a => ({
-    label: `${a.title} (${a.onlineDate} - ${a.offlineDate})`,
+    label: `${a.title} (${formatDateRangeID(a.onlineDateStart, a.onlineDateEnd)} - ${formatDateID(a.offlineDate)})`,
     value: a.id,
     data: a
   }))
@@ -566,7 +583,10 @@ const BazaarRegistration = () => {
                   <Row>
                     <Col xs="12" md="6">
                       <strong>Bazaar:</strong><br />
-                      {announcements.find(a => a.id === selectedRegistration.announcementId)?.title || 'N/A'}
+                      {(() => {
+                        const a = announcements.find(a => a.id === selectedRegistration.announcementId)
+                        return a ? `${a.title}` : 'N/A'
+                      })()}
                     </Col>
                     <Col xs="12" md="6">
                       <strong>Status:</strong><br />

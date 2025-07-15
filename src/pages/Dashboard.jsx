@@ -384,7 +384,7 @@ const Dashboard = () => {
         fontSize: '0.9rem',
         color: '#888'
       }}>
-        Made by Abdur Razzaq - 082125970813
+        Made by Abdur Razzaq - 082125970813 - abangojaq
       </div>
     </div>
   )

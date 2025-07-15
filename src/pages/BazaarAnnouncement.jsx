@@ -18,6 +18,23 @@ function formatDateID(dateStr) {
   if (isNaN(d)) return dateStr
   return `${d.getDate().toString().padStart(2, '0')} ${MONTHS_ID[d.getMonth()]} ${d.getFullYear()}`
 }
+function formatDateRangeID(startStr, endStr) {
+  if (!startStr && !endStr) return ''
+  if (!startStr) return formatDateID(endStr)
+  if (!endStr) return formatDateID(startStr)
+  const start = new Date(startStr)
+  const end = new Date(endStr)
+  if (isNaN(start) || isNaN(end)) return `${startStr} - ${endStr}`
+  if (start.getFullYear() === end.getFullYear()) {
+    if (start.getMonth() === end.getMonth()) {
+      return `${start.getDate()}-${end.getDate()} ${MONTHS_ID[start.getMonth()]} ${start.getFullYear()}`
+    } else {
+      return `${start.getDate()} ${MONTHS_ID[start.getMonth()]} - ${end.getDate()} ${MONTHS_ID[end.getMonth()]} ${start.getFullYear()}`
+    }
+  } else {
+    return `${start.getDate()} ${MONTHS_ID[start.getMonth()]} ${start.getFullYear()} - ${end.getDate()} ${MONTHS_ID[end.getMonth()]} ${end.getFullYear()}`
+  }
+}
 function formatDateTimeID(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
@@ -41,13 +58,14 @@ const BazaarAnnouncement = () => {
     title: '',
     greeting: 'Assalamu\'alaikum Warahmatullah Wabarakatuh\n\nBismillah',
     description: '',
-    onlineDate: '',
+    onlineDateStart: '',
+    onlineDateEnd: '',
     offlineDate: '',
     maxSuppliers: 25,
     maxProductsPerSupplier: 3,
     registrationDeadline: '',
     deliveryDate: '',
-    deliveryTime: '08.00',
+    deliveryTime: '08:00',
     terms: '',
     status: 'active'
   })
@@ -77,12 +95,41 @@ const BazaarAnnouncement = () => {
 
   const handleSave = async () => {
     setLoading(true)
-
     try {
-      const { title, greeting, description, onlineDate, offlineDate, maxSuppliers, maxProductsPerSupplier, registrationDeadline, deliveryDate, deliveryTime, terms, status, weekId } = form
-
-      if (!title || !description || !onlineDate || !offlineDate || !registrationDeadline || !deliveryDate || !weekId) {
+      const { title, greeting, description, onlineDateStart, onlineDateEnd, offlineDate, maxSuppliers, maxProductsPerSupplier, registrationDeadline, deliveryDate, deliveryTime, terms, status, weekId } = form
+      if (!title || !description || !onlineDateStart || !onlineDateEnd || !offlineDate || !registrationDeadline || !deliveryDate || !weekId) {
         Swal.fire('Error', 'Semua field wajib diisi!', 'error')
+        setLoading(false)
+        return
+      }
+      const regDeadline = new Date(registrationDeadline)
+      const onlineStart = new Date(onlineDateStart)
+      const onlineEnd = new Date(onlineDateEnd)
+      const offline = new Date(offlineDate)
+      const delivery = new Date(deliveryDate)
+      if (isNaN(regDeadline) || isNaN(onlineStart) || isNaN(onlineEnd) || isNaN(offline) || isNaN(delivery)) {
+        Swal.fire('Error', 'Format tanggal tidak valid!', 'error')
+        setLoading(false)
+        return
+      }
+      if (regDeadline > onlineStart) {
+        Swal.fire('Error', 'Deadline pendaftaran tidak boleh lebih dari tanggal mulai bazaar online!', 'error')
+        setLoading(false)
+        return
+      }
+      if (regDeadline > onlineEnd) {
+        Swal.fire('Error', 'Deadline pendaftaran tidak boleh lebih dari tanggal selesai bazaar online!', 'error')
+        setLoading(false)
+        return
+      }
+      if (regDeadline > offline) {
+        Swal.fire('Error', 'Deadline pendaftaran tidak boleh lebih dari tanggal bazaar offline!', 'error')
+        setLoading(false)
+        return
+      }
+      if (onlineEnd < onlineStart) {
+        Swal.fire('Error', 'Tanggal selesai bazaar online tidak boleh sebelum tanggal mulai!', 'error')
+        setLoading(false)
         return
       }
 
@@ -91,7 +138,8 @@ const BazaarAnnouncement = () => {
         title,
         greeting,
         description,
-        onlineDate,
+        onlineDateStart,
+        onlineDateEnd,
         offlineDate,
         maxSuppliers: parseInt(maxSuppliers),
         maxProductsPerSupplier: parseInt(maxProductsPerSupplier),
@@ -114,20 +162,19 @@ const BazaarAnnouncement = () => {
       }
 
       await saveBazaarData({ ...bazaarData, announcements: updated })
-
       Swal.fire('Berhasil', `Pengumuman berhasil ${editIndex !== null ? 'diubah' : 'ditambahkan'}`, 'success')
-
       setForm({
         title: '',
         greeting: 'Assalamu\'alaikum Warahmatullah Wabarakatuh\n\nBismillah',
         description: '',
-        onlineDate: '',
+        onlineDateStart: '',
+        onlineDateEnd: '',
         offlineDate: '',
         maxSuppliers: 25,
         maxProductsPerSupplier: 3,
         registrationDeadline: '',
         deliveryDate: '',
-        deliveryTime: '08.00',
+        deliveryTime: '08:00',
         terms: '',
         status: 'active'
       })
@@ -142,7 +189,12 @@ const BazaarAnnouncement = () => {
   }
 
   const handleEdit = (row, index) => {
-    setForm(row)
+    setForm({
+      ...row,
+      onlineDateStart: row.onlineDateStart || row.onlineDate || '',
+      onlineDateEnd: row.onlineDateEnd || row.onlineDate || '',
+      offlineDate: row.offlineDate || '',
+    })
     setEditIndex(index)
     setModalOpen(true)
   }
@@ -157,13 +209,14 @@ const BazaarAnnouncement = () => {
       title: '',
       greeting: 'Assalamu\'alaikum Warahmatullah Wabarakatuh\n\nBismillah',
       description: '',
-      onlineDate: '',
+      onlineDateStart: '',
+      onlineDateEnd: '',
       offlineDate: '',
       maxSuppliers: 25,
       maxProductsPerSupplier: 3,
       registrationDeadline: '',
       deliveryDate: '',
-      deliveryTime: '',
+      deliveryTime: '08:00',
       terms: '',
       status: 'active'
     })
@@ -222,9 +275,9 @@ const BazaarAnnouncement = () => {
     },
     {
       name: 'Tanggal Online',
-      selector: row => formatDateID(row.onlineDate),
+      selector: row => formatDateRangeID(row.onlineDateStart, row.onlineDateEnd),
       sortable: true,
-      width: '150px',
+      width: '180px',
       wrap: true
     },
     {
@@ -298,7 +351,7 @@ const BazaarAnnouncement = () => {
 
 ${announcement.description}
 
-Bazaar Online ${formatDateID(announcement.onlineDate)} dan Bazaar Offline ${formatDateID(announcement.offlineDate)}
+Bazaar Online ${formatDateRangeID(announcement.onlineDateStart, announcement.onlineDateEnd)} dan Bazaar Offline ${formatDateID(announcement.offlineDate)}
 
 Kami batasi hanya untuk ${announcement.maxSuppliers} supplier saja dan maksimal hanya ${announcement.maxProductsPerSupplier} barang/supplier\nMengingat bazaar hanya sampai jam 12.00 WIB 🙏
 
@@ -369,7 +422,7 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
                   value={form.title}
                   onChange={e => setForm({ ...form, title: e.target.value })}
                   disabled={loading}
-                  placeholder={`Contoh: Bazaar FRUK 12 - ${moment().locale('id').format('MMMM YYYY')}`}
+                  placeholder={`Contoh: Bazaar FRUK 12 - ${moment().format('MMMM YYYY')}`}
                 />
               </Col>
               <Col xs="12" md="3" className="mb-3">
@@ -430,14 +483,26 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
 
             <Row>
               <Col xs="12" md="6" className="mb-3">
-                <Label>Tanggal Bazaar Online *</Label>
+                <Label>Tanggal Bazaar Online Mulai *</Label>
                 <Input
                   type="date"
-                  value={form.onlineDate}
-                  onChange={e => setForm({ ...form, onlineDate: e.target.value })}
+                  value={form.onlineDateStart}
+                  onChange={e => setForm({ ...form, onlineDateStart: e.target.value })}
                   disabled={loading}
                 />
               </Col>
+              <Col xs="12" md="6" className="mb-3">
+                <Label>Tanggal Bazaar Online Selesai *</Label>
+                <Input
+                  type="date"
+                  value={form.onlineDateEnd}
+                  onChange={e => setForm({ ...form, onlineDateEnd: e.target.value })}
+                  disabled={loading}
+                />
+              </Col>
+            </Row>
+
+            <Row>
               <Col xs="12" md="6" className="mb-3">
                 <Label>Tanggal Bazaar Offline *</Label>
                 <Input
@@ -481,7 +546,7 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
 
             <Row>
               <Col xs="12" md="6" className="mb-3">
-                <Label>Batas Tanggal Pengiriman (Bazaar Offline) *</Label>
+                <Label>Tanggal Pengiriman (Bazaar Offline) *</Label>
                 <Input
                   type="date"
                   value={form.deliveryDate}
@@ -490,10 +555,10 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
                 />
               </Col>
               <Col xs="12" md="6" className="mb-3">
-                <Label>Batas Waktu Pengiriman (Bazaar Offline)</Label>
+                <Label>Waktu Pengiriman (Bazaar Offline)</Label>
                 <Input
                   type="time"
-                  value={form.deliveryTime}
+                  value={form.deliveryTime || '08:00'}
                   onChange={e => setForm({ ...form, deliveryTime: e.target.value })}
                   disabled={loading}
                 />
