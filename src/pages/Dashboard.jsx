@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { Button, Input, InputGroup, InputGroupText } from 'reactstrap'
 import { useNavigate } from 'react-router-dom'
 import Select from 'react-select'
+import { Instagram, Linkedin, Mail, Phone } from 'react-feather'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -384,7 +385,7 @@ const Dashboard = () => {
         fontSize: '0.9rem',
         color: '#888'
       }}>
-        Made by Abdur Razzaq - 082125970813 - abangojaq
+        Made by Abdur Razzaq - <Phone size="18" color="#05b729ff"/> 082125970813 - <Instagram size="18" color="#b9359eff"/> & <Linkedin size="18" color="#2535e3ff"/> abangojaq - <Mail size="18" color="#bc1313ff"/> abangojaq@gmail.com
       </div>
     </div>
   )

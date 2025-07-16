@@ -36,6 +36,7 @@ const Login = () => {
     <Container className="d-flex justify-content-center align-items-center vh-100">
       <Row>
         <Col>
+          <h5 className="text-center mb-4">Mohon cek nama supplier <br/> terlebih dahulu sebelum mendaftar!</h5>
           <Card style={{ minWidth: 350 }}>
             <CardBody>
               <CardTitle tag="h3" className="mb-4 text-center">Login</CardTitle>
