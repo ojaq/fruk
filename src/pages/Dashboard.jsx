@@ -74,13 +74,23 @@ const Dashboard = () => {
     navigate(`/bazaar-management`)
   }
 
+  const checkProfileEmpty = (profileObj) => {
+    const { namaSupplier, namaBank, namaPenerima, noRekening } = profileObj || {}
+    return !namaSupplier?.trim() || !namaBank?.trim() || !namaPenerima?.trim() || !noRekening?.trim()
+  }
+
   useEffect(() => {
     if (user?.role === 'supplier') {
-      const { namaSupplier, namaBank, namaPenerima, noRekening } = user.profile || {}
-      const empty = !namaSupplier?.trim() || !namaBank?.trim() || !namaPenerima?.trim() || !noRekening?.trim()
+      const empty = checkProfileEmpty(user.profile)
       setIsProfileEmpty(empty)
     }
   }, [profile, user])
+
+  useEffect(() => {
+    if (user?.role === 'supplier') {
+      setIsProfileEmpty(checkProfileEmpty(profile))
+    }
+  }, [profile])
 
   const supplierOptions = registeredUsers
     .filter(u => !['admin', 'supplier', 'superadmin'].includes(u.name.toLowerCase()))
