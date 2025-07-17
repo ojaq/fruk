@@ -160,17 +160,9 @@ const DataSupplier = () => {
     setModalOpen(true)
   }
 
-  const handleDelete = async (index) => {
-    const filteredData = data.filter(item =>
-      Object.values(item).some(val =>
-        String(val).toLowerCase().includes(searchText.toLowerCase())
-      )
-    )
-
-    const selected = filteredData[index]
-
+  const handleDelete = async (row) => {
     const result = await Swal.fire({
-      title: `Yakin ingin hapus produk "${selected.namaProduk}"?`,
+      title: `Yakin ingin hapus produk "${row.namaProduk}"?`,
       text: 'Data ini akan dihapus secara permanen.',
       icon: 'warning',
       showCancelButton: true,
@@ -183,10 +175,10 @@ const DataSupplier = () => {
     setLoading(true)
     try {
       const actualIndex = data.findIndex(item =>
-        item.namaProduk === selected.namaProduk &&
-        item.jenisProduk === selected.jenisProduk &&
-        item.ukuran === selected.ukuran &&
-        item.satuan === selected.satuan
+        item.namaProduk === row.namaProduk &&
+        item.jenisProduk === row.jenisProduk &&
+        item.ukuran === row.ukuran &&
+        item.satuan === row.satuan
       )
 
       if (actualIndex === -1) {
@@ -197,7 +189,7 @@ const DataSupplier = () => {
       const updated = [...data]
       updated.splice(actualIndex, 1)
       await saveProductData(username, updated)
-      Swal.fire('Dihapus!', `Produk "${selected.namaProduk}" berhasil dihapus.`, 'success')
+      Swal.fire('Dihapus!', `Produk "${row.namaProduk}" berhasil dihapus.`, 'success')
     } catch (error) {
       console.error('Error deleting product:', error)
       Swal.fire('Error', 'Gagal menghapus produk', 'error')
@@ -344,7 +336,7 @@ const DataSupplier = () => {
               <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
                 <Edit size={16} />
               </Button>
-              <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
+              <Button size="sm" color="danger" onClick={() => handleDelete(row)} disabled={loading}>
                 <Trash2 size={16} />
               </Button>
             </>
