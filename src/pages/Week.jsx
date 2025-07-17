@@ -115,9 +115,29 @@ const Week = () => {
 
       const updated = [...data]
       if (editIndex !== null) {
-        updated[editIndex] = entry
-        await saveWeekData(sheetName, updated)
-        Swal.fire('Berhasil', 'Data diperbarui', 'success')
+        const filteredRows = data.filter(row => {
+          const matchSearch = Object.values(row).some(val =>
+            String(val).toLowerCase().includes(searchText.toLowerCase())
+          )
+          const matchPemesan = selectedPemesan ? row.pemesan === selectedPemesan.value : true
+          return matchSearch && matchPemesan
+        })
+        const editingRow = filteredRows[editIndex]
+        const actualIndex = data.findIndex(row =>
+          row.pemesan === editingRow.pemesan &&
+          row.produkLabel === editingRow.produkLabel &&
+          row.jumlah === editingRow.jumlah &&
+          row.catatan === editingRow.catatan
+        )
+        if (actualIndex !== -1) {
+          updated[actualIndex] = entry
+          await saveWeekData(sheetName, updated)
+          Swal.fire('Berhasil', 'Data diperbarui', 'success')
+        } else {
+          updated.push(entry)
+          await saveWeekData(sheetName, updated)
+          Swal.fire('Berhasil', 'Data ditambahkan', 'success')
+        }
       } else {
         updated.push(entry)
         await saveWeekData(sheetName, updated)
