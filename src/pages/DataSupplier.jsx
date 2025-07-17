@@ -36,6 +36,7 @@ const DataSupplier = () => {
   const [file, setFile] = useState([])
   const [imagePreview, setImagePreview] = useState({ open: false, url: '' })
 
+  const [editingRow, setEditingRow] = useState(null)
   const username = targetUser || user?.name || ''
   const targetUserData = registeredUsers.find(u => u.name === username)
 
@@ -106,10 +107,26 @@ const DataSupplier = () => {
       }
 
       const updated = [...data]
-      if (editIndex !== null) {
-        updated[editIndex] = { ...newItem }
-        await saveProductData(username, updated)
-        Swal.fire('Berhasil', 'Data berhasil diubah', 'success')
+      if (editIndex !== null && editingRow) {
+        const actualIndex = data.findIndex(item =>
+          item.namaProduk === editingRow.namaProduk &&
+          item.jenisProduk === editingRow.jenisProduk &&
+          item.ukuran === editingRow.ukuran &&
+          item.satuan === editingRow.satuan &&
+          item.hpp === editingRow.hpp &&
+          item.hjk === editingRow.hjk &&
+          (item.keterangan || '') === (editingRow.keterangan || '') &&
+          (item.imageUrl || '') === (editingRow.imageUrl || '')
+        )
+        if (actualIndex !== -1) {
+          updated[actualIndex] = { ...newItem }
+          await saveProductData(username, updated)
+          Swal.fire('Berhasil', 'Data berhasil diubah', 'success')
+        } else {
+          updated.push(newItem)
+          await saveProductData(username, updated)
+          Swal.fire('Berhasil', 'Data berhasil ditambahkan', 'success')
+        }
       } else {
         updated.push(newItem)
         await saveProductData(username, updated)
@@ -128,6 +145,7 @@ const DataSupplier = () => {
       })
       setFile([])
       setEditIndex(null)
+      setEditingRow(null)
       setModalOpen(false)
     } catch (error) {
       console.error('Error saving product:', error)
@@ -141,6 +159,7 @@ const DataSupplier = () => {
     setForm(row)
     setFile([])
     setEditIndex(index)
+    setEditingRow(row)
     setModalOpen(true)
   }
 
@@ -157,6 +176,7 @@ const DataSupplier = () => {
     })
     setFile([])
     setEditIndex(null)
+    setEditingRow(null)
     setModalOpen(true)
   }
 

@@ -32,6 +32,7 @@ const MasterSupplier = () => {
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useState([])
   const [imagePreview, setImagePreview] = useState({ open: false, url: '' })
+  const [editingRow, setEditingRow] = useState(null)
 
   const allProducts = Object.values(productData).flat()
   const uniqueNamaProduk = [...new Set(allProducts.map(d => d.namaProduk))].sort((a, b) => a.localeCompare(b))
@@ -65,6 +66,7 @@ const MasterSupplier = () => {
     setFile([])
     setEditOwner(row._owner)
     setEditIndex(row._index)
+    setEditingRow(row)
     setEditModal(true)
   }
 
@@ -151,10 +153,32 @@ const MasterSupplier = () => {
         }
       }
       const updatedList = [...(productData[editOwner] || [])]
-      updatedList[editIndex] = { ...editForm, imageUrl }
-      await saveProductData(editOwner, updatedList)
-      setEditModal(false)
-      Swal.fire('Berhasil', 'Data produk berhasil diupdate', 'success')
+      let actualIndex = editIndex
+      if (editingRow) {
+        actualIndex = updatedList.findIndex(item =>
+          item.namaProduk === editingRow.namaProduk &&
+          item.jenisProduk === editingRow.jenisProduk &&
+          item.ukuran === editingRow.ukuran &&
+          item.satuan === editingRow.satuan &&
+          item.hpp === editingRow.hpp &&
+          item.hjk === editingRow.hjk &&
+          (item.keterangan || '') === (editingRow.keterangan || '') &&
+          (item.imageUrl || '') === (editingRow.imageUrl || '')
+        )
+      }
+      if (actualIndex !== null && actualIndex !== -1 && updatedList[actualIndex]) {
+        updatedList[actualIndex] = { ...editForm, imageUrl }
+        await saveProductData(editOwner, updatedList)
+        setEditModal(false)
+        setEditingRow(null)
+        Swal.fire('Berhasil', 'Data produk berhasil diupdate', 'success')
+      } else {
+        updatedList.push({ ...editForm, imageUrl })
+        await saveProductData(editOwner, updatedList)
+        setEditModal(false)
+        setEditingRow(null)
+        Swal.fire('Berhasil', 'Data produk berhasil ditambahkan', 'success')
+      }
     } catch (err) {
       Swal.fire('Error', 'Gagal update produk', 'error')
     } finally {
