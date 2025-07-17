@@ -84,13 +84,7 @@ const Dashboard = () => {
       const empty = checkProfileEmpty(user.profile)
       setIsProfileEmpty(empty)
     }
-  }, [profile, user])
-
-  useEffect(() => {
-    if (user?.role === 'supplier') {
-      setIsProfileEmpty(checkProfileEmpty(profile))
-    }
-  }, [profile])
+  }, [user])
 
   const supplierOptions = registeredUsers
     .filter(u => !['admin', 'supplier', 'superadmin'].includes(u.name.toLowerCase()))
