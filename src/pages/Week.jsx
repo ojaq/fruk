@@ -147,9 +147,17 @@ const Week = () => {
     setEditIndex(i)
   }
 
-  const handleDelete = async index => {
+  const handleDelete = async (index) => {
+    const filteredRows = data.filter(row => {
+      const matchSearch = Object.values(row).some(val =>
+        String(val).toLowerCase().includes(searchText.toLowerCase())
+      )
+      const matchPemesan = selectedPemesan ? row.pemesan === selectedPemesan.value : true
+      return matchSearch && matchPemesan
+    })
+    const selected = filteredRows[index]
     const result = await Swal.fire({
-      title: `Hapus data \n "${data[index].pemesan} - ${data[index].produkLabel}"?`,
+      title: `Hapus data \n "${selected.pemesan} - ${selected.produkLabel}"?`,
       text: 'Anda akan menghapus data ini.',
       icon: 'warning',
       showCancelButton: true,
@@ -160,8 +168,18 @@ const Week = () => {
 
     setLoading(true)
     try {
+      const actualIndex = data.findIndex(row =>
+        row.pemesan === selected.pemesan &&
+        row.produkLabel === selected.produkLabel &&
+        row.jumlah === selected.jumlah &&
+        row.catatan === selected.catatan
+      )
+      if (actualIndex === -1) {
+        Swal.fire('Error', 'Data tidak ditemukan', 'error')
+        return
+      }
       const updated = [...data]
-      updated.splice(index, 1)
+      updated.splice(actualIndex, 1)
       await saveWeekData(sheetName, updated)
       setData(updated)
       Swal.fire('Dihapus!', 'Data berhasil dihapus.', 'success')
@@ -190,16 +208,24 @@ const Week = () => {
     },
     {
       name: 'Aksi',
-      cell: (r, i) => (
-        <>
-          <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(r, i)} disabled={loading || isAllWeek}>
-            <Edit size={16} />
-          </Button>
-          <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
-            <Trash2 size={16} />
-          </Button>
-        </>
-      ),
+      cell: (row) => {
+        const filteredIndex = filtered.findIndex(f =>
+          f.pemesan === row.pemesan &&
+          f.produkLabel === row.produkLabel &&
+          f.jumlah === row.jumlah &&
+          f.catatan === row.catatan
+        )
+        return (
+          <>
+            <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, filteredIndex)} disabled={loading || isAllWeek}>
+              <Edit size={16} />
+            </Button>
+            <Button size="sm" color="danger" onClick={() => handleDelete(filteredIndex)} disabled={loading}>
+              <Trash2 size={16} />
+            </Button>
+          </>
+        )
+      },
       width: "140px",
       wrap: true
     }
