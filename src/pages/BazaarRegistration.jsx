@@ -258,6 +258,7 @@ const BazaarRegistration = () => {
   }
 
   const handleDelete = async (index) => {
+    const row = filteredData[index]
     const result = await Swal.fire({
       title: `Hapus pendaftaran?`,
       text: 'Pendaftaran ini akan dihapus secara permanen.',
@@ -271,8 +272,13 @@ const BazaarRegistration = () => {
 
     setLoading(true)
     try {
+      const actualIndex = registrations.findIndex(r => r.id === row.id)
+      if (actualIndex === -1) {
+        Swal.fire('Error', 'Data tidak ditemukan', 'error')
+        return
+      }
       const updated = [...registrations]
-      updated.splice(index, 1)
+      updated.splice(actualIndex, 1)
       await saveBazaarData({ ...bazaarData, registrations: updated })
       Swal.fire('Dihapus!', 'Pendaftaran berhasil dihapus.', 'success')
     } catch (error) {

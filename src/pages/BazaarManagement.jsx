@@ -40,6 +40,7 @@ const BazaarManagement = () => {
   const [searchText, setSearchText] = useState('')
   const [filterAnnouncement, setFilterAnnouncement] = useState(null)
   const [filterStatus, setFilterStatus] = useState(null)
+  const [editingRegistration, setEditingRegistration] = useState(null)
 
   const [form, setForm] = useState({
     status: '',
@@ -72,12 +73,25 @@ const BazaarManagement = () => {
       }
 
       const updated = [...registrations]
-      updated[editIndex] = {
-        ...updated[editIndex],
-        status,
-        adminNotes,
-        updatedAt: new Date().toISOString(),
-        reviewedBy: user.name
+      if (editIndex !== null && editingRegistration) {
+        const actualIndex = registrations.findIndex(r => r.id === editingRegistration.id)
+        if (actualIndex !== -1) {
+          updated[actualIndex] = {
+            ...updated[actualIndex],
+            status: form.status,
+            adminNotes: form.adminNotes,
+            updatedAt: new Date().toISOString(),
+            reviewedBy: user.name
+          }
+        } else {
+          updated[editIndex] = {
+            ...updated[editIndex],
+            status: form.status,
+            adminNotes: form.adminNotes,
+            updatedAt: new Date().toISOString(),
+            reviewedBy: user.name
+          }
+        }
       }
 
       await saveBazaarData({ ...bazaarData, registrations: updated })
@@ -89,6 +103,7 @@ const BazaarManagement = () => {
         adminNotes: ''
       })
       setEditIndex(null)
+      setEditingRegistration(null)
       setModalOpen(false)
     } catch (error) {
       console.error('Error updating registration:', error)
@@ -104,6 +119,7 @@ const BazaarManagement = () => {
       adminNotes: row.adminNotes || ''
     })
     setEditIndex(index)
+    setEditingRegistration(row)
     setModalOpen(true)
   }
 
@@ -185,6 +201,7 @@ const BazaarManagement = () => {
   }
 
   const handleDelete = async (index) => {
+    const row = registrations[index]
     const result = await Swal.fire({
       title: `Hapus pendaftaran?`,
       text: 'Pendaftaran ini akan dihapus secara permanen.',
@@ -198,8 +215,13 @@ const BazaarManagement = () => {
 
     setLoading(true)
     try {
+      const actualIndex = registrations.findIndex(r => r.id === row.id)
+      if (actualIndex === -1) {
+        Swal.fire('Error', 'Data tidak ditemukan', 'error')
+        return
+      }
       const updated = [...registrations]
-      updated.splice(index, 1)
+      updated.splice(actualIndex, 1)
       await saveBazaarData({ ...bazaarData, registrations: updated })
       Swal.fire('Dihapus!', 'Pendaftaran berhasil dihapus.', 'success')
     } catch (error) {

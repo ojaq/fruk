@@ -53,6 +53,7 @@ const BazaarAnnouncement = () => {
   const [editIndex, setEditIndex] = useState(null)
   const [loading, setLoading] = useState(false)
   const [searchText, setSearchText] = useState('')
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null)
 
   const [form, setForm] = useState({
     title: '',
@@ -134,7 +135,7 @@ const BazaarAnnouncement = () => {
       }
 
       const newAnnouncement = {
-        id: editIndex !== null ? announcements[editIndex].id : Date.now().toString(),
+        id: editIndex !== null ? editingAnnouncement?.id || announcements[editIndex].id : Date.now().toString(),
         title,
         greeting,
         description,
@@ -149,14 +150,19 @@ const BazaarAnnouncement = () => {
         terms,
         status,
         weekId,
-        createdAt: editIndex !== null ? announcements[editIndex].createdAt : new Date().toISOString(),
+        createdAt: editIndex !== null ? (editingAnnouncement?.createdAt || announcements[editIndex].createdAt) : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         createdBy: user.name
       }
 
       const updated = [...announcements]
-      if (editIndex !== null) {
-        updated[editIndex] = newAnnouncement
+      if (editIndex !== null && editingAnnouncement) {
+        const actualIndex = announcements.findIndex(a => a.id === editingAnnouncement.id)
+        if (actualIndex !== -1) {
+          updated[actualIndex] = newAnnouncement
+        } else {
+          updated.push(newAnnouncement)
+        }
       } else {
         updated.push(newAnnouncement)
       }
@@ -179,6 +185,7 @@ const BazaarAnnouncement = () => {
         status: 'active'
       })
       setEditIndex(null)
+      setEditingAnnouncement(null)
       setModalOpen(false)
     } catch (error) {
       console.error('Error saving announcement:', error)
@@ -196,6 +203,7 @@ const BazaarAnnouncement = () => {
       offlineDate: row.offlineDate || '',
     })
     setEditIndex(index)
+    setEditingAnnouncement(row)
     setModalOpen(true)
   }
 
@@ -221,12 +229,14 @@ const BazaarAnnouncement = () => {
       status: 'active'
     })
     setEditIndex(null)
+    setEditingAnnouncement(null)
     setModalOpen(true)
   }
 
   const handleDelete = async (index) => {
+    const row = announcements[index]
     const result = await Swal.fire({
-      title: `Hapus pengumuman "${announcements[index].title}"?`,
+      title: `Hapus pengumuman "${row.title}"?`,
       text: 'Pengumuman ini akan dihapus secara permanen.',
       icon: 'warning',
       showCancelButton: true,
@@ -238,8 +248,13 @@ const BazaarAnnouncement = () => {
 
     setLoading(true)
     try {
+      const actualIndex = announcements.findIndex(a => a.id === row.id)
+      if (actualIndex === -1) {
+        Swal.fire('Error', 'Data tidak ditemukan', 'error')
+        return
+      }
       const updated = [...announcements]
-      updated.splice(index, 1)
+      updated.splice(actualIndex, 1)
       await saveBazaarData({ ...bazaarData, announcements: updated })
       Swal.fire('Dihapus!', 'Pengumuman berhasil dihapus.', 'success')
     } catch (error) {
