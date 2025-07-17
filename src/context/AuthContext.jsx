@@ -196,6 +196,8 @@ export const AuthProvider = ({ children }) => {
 
   const saveProfile = (newProfile) => {
     setProfile(newProfile)
+    setUser(prev => prev ? { ...prev, profile: newProfile } : prev)
+    localStorage.setItem('currentUser', JSON.stringify({ ...user, profile: newProfile }))
   }
 
   const saveProductData = async (name, data) => {
