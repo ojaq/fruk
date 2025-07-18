@@ -36,15 +36,8 @@ const Week = () => {
   const allowedProducts = []
   approvedRegs.forEach(reg => {
     const onlineArr = Array.isArray(reg.selectedProductsOnline) ? reg.selectedProductsOnline : []
-    const offlineArr = Array.isArray(reg.selectedProductsOffline) ? reg.selectedProductsOffline : []
-    if (onlineArr.length || offlineArr.length) {
+    if (onlineArr.length) {
       onlineArr.forEach(prod => {
-        allowedProducts.push({
-          ...prod,
-          owner: reg.supplierName
-        })
-      })
-      offlineArr.forEach(prod => {
         allowedProducts.push({
           ...prod,
           owner: reg.supplierName

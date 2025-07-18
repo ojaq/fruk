@@ -154,6 +154,8 @@ const BazaarRegistration = () => {
         return
       }
 
+      const maxSuppliersOnline = announcement.maxSuppliersOnline || 50
+      const maxSuppliersOffline = announcement.maxSuppliersOffline || 25
       const maxProducts = announcement.maxProductsPerSupplier || 3
       let baseProductSetOnline = new Set()
       let baseProductSetOffline = new Set()
@@ -449,6 +451,8 @@ const BazaarRegistration = () => {
   }))
 
   const currentAnnouncement = selectedAnnouncement || announcements.find(a => a.id === form.announcementId)
+  const maxSuppliersOnline = currentAnnouncement?.maxSuppliersOnline || 50
+  const maxSuppliersOffline = currentAnnouncement?.maxSuppliersOffline || 25
   const maxProducts = currentAnnouncement?.maxProductsPerSupplier || 3
   const baseProducts = form.selectedProducts.map(p => getBaseProduct(p.label))
   const uniqueBaseProducts = Array.from(new Set(baseProducts))
@@ -594,7 +598,7 @@ const BazaarRegistration = () => {
                           setForm(f => ({ ...f, selectedProductsOnline: selected }))
                         }
                       }}
-                      placeholder={`Pilih produk untuk bazaar online (maks ${maxProducts} produk utama)`}
+                      placeholder={`Pilih produk untuk bazaar online (maks ${maxProducts} produk utama, maksimal ${maxSuppliersOnline} supplier)`}
                       isDisabled={loading || !form.participateOnline}
                     />
                     {(() => {
@@ -631,7 +635,7 @@ const BazaarRegistration = () => {
                           setForm(f => ({ ...f, selectedProductsOffline: selected }))
                         }
                       }}
-                      placeholder={`Pilih produk untuk bazaar offline (maks ${maxProducts} produk utama)`}
+                      placeholder={`Pilih produk untuk bazaar offline (maks ${maxProducts} produk utama, maksimal ${maxSuppliersOffline} supplier)`}
                       isDisabled={loading || !form.participateOffline}
                     />
                     {(() => {
@@ -670,7 +674,7 @@ const BazaarRegistration = () => {
                         setForm(f => ({ ...f, selectedProducts: selected }))
                       }
                     }}
-                    placeholder={`Pilih produk yang akan dijual di bazaar ini (maks ${maxProducts} produk utama)`}
+                    placeholder={`Pilih produk yang akan dijual di bazaar ini (maks ${maxProducts} produk utama, maksimal ${Math.max(maxSuppliersOnline, maxSuppliersOffline)} supplier)`}
                     isDisabled={loading}
                   />
                   <small className={`${isAtMaxProducts ? 'text-danger' : 'text-muted'}`}>

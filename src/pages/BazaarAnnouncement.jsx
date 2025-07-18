@@ -62,7 +62,8 @@ const BazaarAnnouncement = () => {
     onlineDateStart: '',
     onlineDateEnd: '',
     offlineDate: '',
-    maxSuppliers: 25,
+    maxSuppliersOnline: 50,
+    maxSuppliersOffline: 25,
     maxProductsPerSupplier: 3,
     registrationDeadline: '',
     deliveryDate: '',
@@ -97,7 +98,7 @@ const BazaarAnnouncement = () => {
   const handleSave = async () => {
     setLoading(true)
     try {
-      const { title, greeting, description, onlineDateStart, onlineDateEnd, offlineDate, maxSuppliers, maxProductsPerSupplier, registrationDeadline, deliveryDate, deliveryTime, terms, status, weekId } = form
+      const { title, greeting, description, onlineDateStart, onlineDateEnd, offlineDate, maxSuppliersOnline, maxSuppliersOffline, maxProductsPerSupplier, registrationDeadline, deliveryDate, deliveryTime, terms, status, weekId } = form
       if (!title || !description || !onlineDateStart || !onlineDateEnd || !offlineDate || !registrationDeadline || !deliveryDate || !weekId) {
         Swal.fire('Error', 'Semua field wajib diisi!', 'error')
         setLoading(false)
@@ -142,7 +143,8 @@ const BazaarAnnouncement = () => {
         onlineDateStart,
         onlineDateEnd,
         offlineDate,
-        maxSuppliers: parseInt(maxSuppliers),
+        maxSuppliersOnline: parseInt(maxSuppliersOnline),
+        maxSuppliersOffline: parseInt(maxSuppliersOffline),
         maxProductsPerSupplier: parseInt(maxProductsPerSupplier),
         registrationDeadline,
         deliveryDate,
@@ -176,7 +178,8 @@ const BazaarAnnouncement = () => {
         onlineDateStart: '',
         onlineDateEnd: '',
         offlineDate: '',
-        maxSuppliers: 25,
+        maxSuppliersOnline: 25,
+        maxSuppliersOffline: 25,
         maxProductsPerSupplier: 3,
         registrationDeadline: '',
         deliveryDate: '',
@@ -220,7 +223,8 @@ const BazaarAnnouncement = () => {
       onlineDateStart: '',
       onlineDateEnd: '',
       offlineDate: '',
-      maxSuppliers: 25,
+      maxSuppliersOnline: 25,
+      maxSuppliersOffline: 25,
       maxProductsPerSupplier: 3,
       registrationDeadline: '',
       deliveryDate: '',
@@ -377,9 +381,9 @@ const BazaarAnnouncement = () => {
 
 ${announcement.description}
 
-Bazaar Online ${formatDateRangeID(announcement.onlineDateStart, announcement.onlineDateEnd)} dan Bazaar Offline ${formatDateID(announcement.offlineDate)}
+Bazaar Online ${formatDateRangeID(announcement.onlineDateStart, announcement.onlineDateEnd)} (maksimal ${announcement.maxSuppliersOnline || '-'} supplier) dan Bazaar Offline ${formatDateID(announcement.offlineDate)} (maksimal ${announcement.maxSuppliersOffline || '-'} supplier)
 
-Kami batasi hanya untuk ${announcement.maxSuppliers} supplier saja dan maksimal hanya ${announcement.maxProductsPerSupplier} barang/supplier\nMengingat bazaar hanya sampai jam 12.00 WIB 🙏
+Kami batasi maksimal hanya ${announcement.maxProductsPerSupplier} barang/supplier\nMengingat bazaar hanya sampai jam 12.00 WIB 🙏
 
 Pendaftaran ditutup ${formatDateTimeID(announcement.registrationDeadline)}
 
@@ -543,11 +547,20 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
 
             <Row>
               <Col xs="12" md="4" className="mb-3">
-                <Label>Maksimal Supplier</Label>
+                <Label>Maksimal Supplier Online</Label>
                 <Input
                   type="number"
-                  value={form.maxSuppliers}
-                  onChange={e => setForm({ ...form, maxSuppliers: e.target.value })}
+                  value={form.maxSuppliersOnline}
+                  onChange={e => setForm({ ...form, maxSuppliersOnline: e.target.value })}
+                  disabled={loading}
+                />
+              </Col>
+              <Col xs="12" md="4" className="mb-3">
+                <Label>Maksimal Supplier Offline</Label>
+                <Input
+                  type="number"
+                  value={form.maxSuppliersOffline}
+                  onChange={e => setForm({ ...form, maxSuppliersOffline: e.target.value })}
                   disabled={loading}
                 />
               </Col>
@@ -557,15 +570,6 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
                   type="number"
                   value={form.maxProductsPerSupplier}
                   onChange={e => setForm({ ...form, maxProductsPerSupplier: e.target.value })}
-                  disabled={loading}
-                />
-              </Col>
-              <Col xs="12" md="4" className="mb-3">
-                <Label>Deadline Pendaftaran *</Label>
-                <Input
-                  type="datetime-local"
-                  value={form.registrationDeadline}
-                  onChange={e => setForm({ ...form, registrationDeadline: e.target.value })}
                   disabled={loading}
                 />
               </Col>

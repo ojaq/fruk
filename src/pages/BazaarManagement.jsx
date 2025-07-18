@@ -41,6 +41,7 @@ const BazaarManagement = () => {
   const [filterAnnouncement, setFilterAnnouncement] = useState(null)
   const [filterStatus, setFilterStatus] = useState(null)
   const [editingRegistration, setEditingRegistration] = useState(null)
+  const [filterParticipation, setFilterParticipation] = useState('all')
 
   const [form, setForm] = useState({
     status: '',
@@ -349,23 +350,26 @@ const BazaarManagement = () => {
   const filteredData = registrations.filter(item => {
     const announcement = announcements.find(a => a.id === item.announcementId)
     const announcementTitle = announcement ? announcement.title : ''
-
     const matchSearch = announcementTitle.toLowerCase().includes(searchText.toLowerCase()) ||
       item.supplierName.toLowerCase().includes(searchText.toLowerCase()) ||
       item.notes?.toLowerCase().includes(searchText.toLowerCase())
-
     const matchAnnouncement = filterAnnouncement ? item.announcementId === filterAnnouncement.value : true
     const matchStatus = filterStatus ? item.status === filterStatus.value : true
-
-    return matchSearch && matchAnnouncement && matchStatus
+    const matchParticipation =
+      filterParticipation === 'all' ? true :
+      filterParticipation === 'online' ? item.participateOnline :
+      filterParticipation === 'offline' ? item.participateOffline : true
+    return matchSearch && matchAnnouncement && matchStatus && matchParticipation
   })
 
   const stats = {
-    total: registrations.length,
-    pending: registrations.filter(r => r.status === 'pending').length,
-    approved: registrations.filter(r => r.status === 'approved').length,
-    rejected: registrations.filter(r => r.status === 'rejected').length
+    total: filteredData.length,
+    pending: filteredData.filter(r => r.status === 'pending').length,
+    approved: filteredData.filter(r => r.status === 'approved').length,
+    rejected: filteredData.filter(r => r.status === 'rejected').length
   }
+  const onlineCount = filteredData.filter(r => r.participateOnline).length
+  const offlineCount = filteredData.filter(r => r.participateOffline).length
 
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
@@ -374,6 +378,14 @@ const BazaarManagement = () => {
           <h4>Manajemen Pendaftaran Bazaar</h4>
         </Col>
         <Col xs="12" md="6" className="text-end mt-2 mt-md-0">
+          <Button className="me-3" color="danger" onClick={() => {
+            setSearchText('')
+            setFilterAnnouncement(null)
+            setFilterStatus(null)
+            setFilterParticipation('')
+          }} disabled={loading}>
+            Reset Filter
+          </Button>
           <Button color="warning" onClick={() => window.history.back()} disabled={loading}>
             Kembali
           </Button>
@@ -381,36 +393,52 @@ const BazaarManagement = () => {
       </Row>
 
       {/* Cards */}
-      <Row className="mb-4">
-        <Col xs="6" md="3" className="mb-3">
+      <Row className="mb-2">
+        <Col xs="6" md="2" className="mb-3">
           <Card className="text-center">
-            <CardBody>
-              <h3 className="text-primary">{stats.total}</h3>
-              <small>Total Pendaftaran</small>
+            <CardBody className="bg-primary">
+              <h3 className="text-white">{stats.total}</h3>
+              <small className="text-white fw-bolder">Total Pendaftaran</small>
             </CardBody>
           </Card>
         </Col>
-        <Col xs="6" md="3" className="mb-3">
+        <Col xs="6" md="2" className="mb-3">
           <Card className="text-center">
-            <CardBody>
-              <h3 className="text-warning">{stats.pending}</h3>
-              <small>Menunggu</small>
+            <CardBody className="bg-warning">
+              <h3 className="text-white">{stats.pending}</h3>
+              <small className="text-white fw-bolder">Menunggu</small>
             </CardBody>
           </Card>
         </Col>
-        <Col xs="6" md="3" className="mb-3">
+        <Col xs="6" md="2" className="mb-3">
           <Card className="text-center">
-            <CardBody>
-              <h3 className="text-success">{stats.approved}</h3>
-              <small>Disetujui</small>
+            <CardBody className="bg-success">
+              <h3 className="text-white">{stats.approved}</h3>
+              <small className="text-white fw-bolder">Disetujui</small>
             </CardBody>
           </Card>
         </Col>
-        <Col xs="6" md="3" className="mb-3">
+        <Col xs="6" md="2" className="mb-3">
           <Card className="text-center">
-            <CardBody>
-              <h3 className="text-danger">{stats.rejected}</h3>
-              <small>Ditolak</small>
+            <CardBody className="bg-danger">
+              <h3 className="text-white">{stats.rejected}</h3>
+              <small className="text-white fw-bolder">Ditolak</small>
+            </CardBody>
+          </Card>
+        </Col>
+        <Col xs="6" md="2" className="mb-3">
+          <Card className="text-center">
+            <CardBody className="bg-primary">
+              <h3 className="text-white">{onlineCount}</h3>
+              <small className="text-white fw-bolder">Online</small>
+            </CardBody>
+          </Card>
+        </Col>
+        <Col xs="6" md="2" className="mb-3">
+          <Card className="text-center">
+            <CardBody className="bg-info">
+              <h3 className="text-white">{offlineCount}</h3>
+              <small className="text-white fw-bolder">Offline</small>
             </CardBody>
           </Card>
         </Col>
@@ -447,14 +475,17 @@ const BazaarManagement = () => {
             isDisabled={loading}
           />
         </Col>
-        <Col xs="12" md="3" className="text-end">
-          <Button color="danger" onClick={() => {
-            setSearchText('')
-            setFilterAnnouncement(null)
-            setFilterStatus(null)
-          }} disabled={loading}>
-            Reset Filter
-          </Button>
+        <Col xs="12" md="3" className="d-flex align-items-center gap-2">
+          <Label className="mb-0">Partisipasi:</Label>
+          <Input
+            type="select"
+            value={filterParticipation}
+            onChange={e => setFilterParticipation(e.target.value)}
+          >
+            <option value="all">Semua</option>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+          </Input>
         </Col>
       </Row>
 
