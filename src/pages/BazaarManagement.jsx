@@ -279,7 +279,15 @@ const BazaarManagement = () => {
     },
     {
       name: 'Jumlah Produk',
-      selector: row => row.selectedProducts.length,
+      selector: row => {
+        if (row.selectedProductsOnline?.length || row.selectedProductsOffline?.length) {
+          let count = 0
+          if (row.selectedProductsOnline) count += row.selectedProductsOnline.length
+          if (row.selectedProductsOffline) count += row.selectedProductsOffline.length
+          return count
+        }
+        return row.selectedProducts?.length || 0
+      },
       sortable: true,
       width: '150px',
       wrap: true
@@ -550,9 +558,24 @@ const BazaarManagement = () => {
                     <Col xs="12">
                       <strong>Produk yang Didaftarkan:</strong><br />
                       <ul className="mt-1">
-                        {selectedRegistration.selectedProducts.map((product, index) => (
-                          <li key={index}>{product.label}</li>
-                        ))}
+                        {selectedRegistration.selectedProductsOnline?.length || selectedRegistration.selectedProductsOffline?.length
+                          ? <>
+                              {selectedRegistration.selectedProductsOnline?.length > 0 && <>
+                                <li><strong>Online:</strong></li>
+                                {selectedRegistration.selectedProductsOnline.map((product, index) => (
+                                  <li key={"on-"+index} style={{marginLeft: 16}}>{product.label}</li>
+                                ))}
+                              </>}
+                              {selectedRegistration.selectedProductsOffline?.length > 0 && <>
+                                <li><strong>Offline:</strong></li>
+                                {selectedRegistration.selectedProductsOffline.map((product, index) => (
+                                  <li key={"off-"+index} style={{marginLeft: 16}}>{product.label}</li>
+                                ))}
+                              </>}
+                            </>
+                          : selectedRegistration.selectedProducts?.map((product, index) => (
+                              <li key={index}>{product.label}</li>
+                            ))}
                       </ul>
                     </Col>
                   </Row>

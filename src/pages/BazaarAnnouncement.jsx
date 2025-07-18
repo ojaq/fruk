@@ -346,10 +346,21 @@ const BazaarAnnouncement = () => {
     const online = []
     const offline = []
     registrations.forEach(reg => {
-      const productList = (reg.selectedProducts || []).map(p => p.label).join(', ')
-      const line = productList ? `${reg.supplierName}: ${productList}` : reg.supplierName
-      if (reg.participateOnline) online.push(line)
-      if (reg.participateOffline) offline.push(line)
+      let onlineProducts = []
+      let offlineProducts = []
+      if (reg.selectedProductsOnline?.length || reg.selectedProductsOffline?.length) {
+        onlineProducts = reg.selectedProductsOnline || []
+        offlineProducts = reg.selectedProductsOffline || []
+      } else {
+        if (reg.selectedProducts?.length) {
+          if (reg.participateOnline) onlineProducts = reg.selectedProducts
+          if (reg.participateOffline) offlineProducts = reg.selectedProducts
+        }
+      }
+      const onlineList = onlineProducts.map(p => p.label).join(', ')
+      const offlineList = offlineProducts.map(p => p.label).join(', ')
+      if (reg.participateOnline) online.push(onlineList ? `${reg.supplierName}: ${onlineList}` : reg.supplierName)
+      if (reg.participateOffline) offline.push(offlineList ? `${reg.supplierName}: ${offlineList}` : reg.supplierName)
     })
     return { online, offline }
   }

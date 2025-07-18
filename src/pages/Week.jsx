@@ -35,12 +35,29 @@ const Week = () => {
   const approvedRegs = (bazaarData.registrations || []).filter(r => r.announcementId === currentAnnouncement?.id && r.status === 'approved')
   const allowedProducts = []
   approvedRegs.forEach(reg => {
-    (reg.selectedProducts || []).forEach(prod => {
-      allowedProducts.push({
-        ...prod,
-        owner: reg.supplierName
+    const onlineArr = Array.isArray(reg.selectedProductsOnline) ? reg.selectedProductsOnline : []
+    const offlineArr = Array.isArray(reg.selectedProductsOffline) ? reg.selectedProductsOffline : []
+    if (onlineArr.length || offlineArr.length) {
+      onlineArr.forEach(prod => {
+        allowedProducts.push({
+          ...prod,
+          owner: reg.supplierName
+        })
       })
-    })
+      offlineArr.forEach(prod => {
+        allowedProducts.push({
+          ...prod,
+          owner: reg.supplierName
+        })
+      })
+    } else {
+      (Array.isArray(reg.selectedProducts) ? reg.selectedProducts : []).forEach(prod => {
+        allowedProducts.push({
+          ...prod,
+          owner: reg.supplierName
+        })
+      })
+    }
   })
 
   useEffect(() => {
