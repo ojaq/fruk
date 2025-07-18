@@ -206,31 +206,9 @@ const BazaarRegistration = () => {
           setLoading(false)
           return
         }
-        if (participateOnline) {
-          baseProductSetOnline = new Set(selectedProductsOnline.map(p => getBaseProduct(p.label)))
-          if (baseProductSetOnline.size > maxProducts) {
-            Swal.fire('Error', `Maksimal ${maxProducts} produk utama untuk bazaar online!`, 'error')
-            setLoading(false)
-            return
-          }
-        }
-        if (participateOffline) {
-          baseProductSetOffline = new Set(selectedProductsOffline.map(p => getBaseProduct(p.label)))
-          if (baseProductSetOffline.size > maxProducts) {
-            Swal.fire('Error', `Maksimal ${maxProducts} produk utama untuk bazaar offline!`, 'error')
-            setLoading(false)
-            return
-          }
-        }
       } else {
         if (selectedProducts.length === 0) {
           Swal.fire('Error', 'Pilih produk yang akan dijual!', 'error')
-          setLoading(false)
-          return
-        }
-        const baseProductSet = new Set(selectedProducts.map(p => getBaseProduct(p.label)))
-        if (baseProductSet.size > maxProducts) {
-          Swal.fire('Error', `Maksimal ${maxProducts} produk utama per supplier!`, 'error')
           setLoading(false)
           return
         }
