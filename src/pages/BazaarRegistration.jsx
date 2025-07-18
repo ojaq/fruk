@@ -160,8 +160,8 @@ const BazaarRegistration = () => {
         return
       }
 
-      const maxSuppliersOnline = announcement.maxSuppliersOnline || 50
-      const maxSuppliersOffline = announcement.maxSuppliersOffline || 25
+      const maxSuppliersOnline = announcement.maxSuppliersOnline || 70
+      const maxSuppliersOffline = announcement.maxSuppliersOffline || 40
       const maxProducts = announcement.maxProductsPerSupplier || 3
       let baseProductSetOnline = new Set()
       let baseProductSetOffline = new Set()
@@ -457,8 +457,8 @@ const BazaarRegistration = () => {
   }))
 
   const currentAnnouncement = selectedAnnouncement || announcements.find(a => a.id === form.announcementId)
-  const maxSuppliersOnline = currentAnnouncement?.maxSuppliersOnline || 50
-  const maxSuppliersOffline = currentAnnouncement?.maxSuppliersOffline || 25
+  const maxSuppliersOnline = currentAnnouncement?.maxSuppliersOnline || 70
+  const maxSuppliersOffline = currentAnnouncement?.maxSuppliersOffline || 40
   const maxProducts = currentAnnouncement?.maxProductsPerSupplier || 3
   const baseProducts = form.selectedProducts.map(p => getBaseProduct(p.label))
   const uniqueBaseProducts = Array.from(new Set(baseProducts))
