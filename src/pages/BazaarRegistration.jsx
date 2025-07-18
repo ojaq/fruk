@@ -83,8 +83,8 @@ const BazaarRegistration = () => {
   useEffect(() => {
     if (productData[user?.name]) {
       const products = productData[user.name].filter(p => p.aktif).map(p => ({
-        label: `${p.namaProduk} ${p.ukuran} ${p.satuan}`,
-        value: p.namaProduk,
+        label: `${p.namaProduk} ${p.ukuran} ${p.satuan}`.trim(),
+        value: `${p.namaProduk} ${p.ukuran} ${p.satuan}`.trim(),
         data: p
       }))
       setUserProducts(products)
@@ -139,6 +139,36 @@ const BazaarRegistration = () => {
     if (lastSpace !== -1) {
       return label.slice(0, lastSpace).trim()
     }
+    return label
+  }
+
+  function getDynamicBaseProduct(label, allLabels) {
+    const words = label.split(' ')
+    const firstWord = words[0]
+    const countFirstWord = allLabels.filter(l => l.split(' ')[0] === firstWord).length
+    if (countFirstWord > 1) {
+      return firstWord
+    }
+    if (words.length >= 2) {
+      const last2 = words.slice(-2).join(' ')
+      const count2 = allLabels.filter(l => l.endsWith(last2)).length
+      if (count2 > 1) return last2
+    }
+    const last1 = words[words.length - 1]
+    const count1 = allLabels.filter(l => l.endsWith(last1)).length
+    if (count1 > 1) return last1
+    if (words.length >= 3) {
+      const first3 = words.slice(0, 3).join(' ')
+      const count3 = allLabels.filter(l => l.startsWith(first3)).length
+      if (count3 > 1) return first3
+    }
+    if (words.length >= 2) {
+      const first2 = words.slice(0, 2).join(' ')
+      const count2p = allLabels.filter(l => l.startsWith(first2)).length
+      if (count2p > 1) return first2
+    }
+    const count1p = allLabels.filter(l => l.split(' ')[0] === firstWord).length
+    if (count1p > 1) return firstWord
     return label
   }
 
@@ -460,7 +490,7 @@ const BazaarRegistration = () => {
   const maxSuppliersOnline = currentAnnouncement?.maxSuppliersOnline || 70
   const maxSuppliersOffline = currentAnnouncement?.maxSuppliersOffline || 40
   const maxProducts = currentAnnouncement?.maxProductsPerSupplier || 3
-  const baseProducts = form.selectedProducts.map(p => getBaseProduct(p.label))
+  const baseProducts = form.selectedProducts.map(p => getDynamicBaseProduct(p.label, form.selectedProducts.map(x => x.label)))
   const uniqueBaseProducts = Array.from(new Set(baseProducts))
   const isAtMaxProducts = uniqueBaseProducts.length >= maxProducts
 
@@ -599,7 +629,7 @@ const BazaarRegistration = () => {
                       options={userProducts}
                       value={form.selectedProductsOnline}
                       onChange={selected => {
-                        const baseSet = new Set(selected.map(p => getBaseProduct(p.label)))
+                        const baseSet = new Set(selected.map(p => getDynamicBaseProduct(p.label, selected.map(x => x.label))))
                         if (baseSet.size <= maxProducts) {
                           setForm(f => ({ ...f, selectedProductsOnline: selected }))
                         }
@@ -608,7 +638,7 @@ const BazaarRegistration = () => {
                       isDisabled={loading || !form.participateOnline}
                     />
                     {(() => {
-                      const baseProductsOnline = form.selectedProductsOnline.map(p => getBaseProduct(p.label))
+                      const baseProductsOnline = form.selectedProductsOnline.map(p => getDynamicBaseProduct(p.label, form.selectedProductsOnline.map(x => x.label)))
                       const uniqueBaseProductsOnline = Array.from(new Set(baseProductsOnline))
                       return (
                         <small className={`${uniqueBaseProductsOnline.length >= maxProducts ? 'text-danger' : 'text-muted'}`}>
@@ -636,7 +666,7 @@ const BazaarRegistration = () => {
                       options={userProducts}
                       value={form.selectedProductsOffline}
                       onChange={selected => {
-                        const baseSet = new Set(selected.map(p => getBaseProduct(p.label)))
+                        const baseSet = new Set(selected.map(p => getDynamicBaseProduct(p.label, selected.map(x => x.label))))
                         if (baseSet.size <= maxProducts) {
                           setForm(f => ({ ...f, selectedProductsOffline: selected }))
                         }
@@ -645,7 +675,7 @@ const BazaarRegistration = () => {
                       isDisabled={loading || !form.participateOffline}
                     />
                     {(() => {
-                      const baseProductsOffline = form.selectedProductsOffline.map(p => getBaseProduct(p.label))
+                      const baseProductsOffline = form.selectedProductsOffline.map(p => getDynamicBaseProduct(p.label, form.selectedProductsOffline.map(x => x.label)))
                       const uniqueBaseProductsOffline = Array.from(new Set(baseProductsOffline))
                       return (
                         <small className={`${uniqueBaseProductsOffline.length >= maxProducts ? 'text-danger' : 'text-muted'}`}>
@@ -675,7 +705,7 @@ const BazaarRegistration = () => {
                     options={userProducts}
                     value={form.selectedProducts}
                     onChange={selected => {
-                      const baseSet = new Set(selected.map(p => getBaseProduct(p.label)))
+                      const baseSet = new Set(selected.map(p => getDynamicBaseProduct(p.label, selected.map(x => x.label))))
                       if (baseSet.size <= maxProducts) {
                         setForm(f => ({ ...f, selectedProducts: selected }))
                       }
