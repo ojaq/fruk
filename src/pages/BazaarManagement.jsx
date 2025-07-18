@@ -114,12 +114,13 @@ const BazaarManagement = () => {
     }
   }
 
-  const handleEdit = (row, index) => {
+  const handleEdit = (row) => {
     setForm({
       status: row.status,
       adminNotes: row.adminNotes || ''
     })
-    setEditIndex(index)
+    const idx = registrations.findIndex(r => r.id === row.id)
+    setEditIndex(idx)
     setEditingRegistration(row)
     setModalOpen(true)
   }
@@ -129,7 +130,7 @@ const BazaarManagement = () => {
     setViewModalOpen(true)
   }
 
-  const handleQuickApprove = async (index) => {
+  const handleQuickApprove = async (row) => {
     const result = await Swal.fire({
       title: 'Setujui pendaftaran?',
       text: 'Pendaftaran ini akan disetujui.',
@@ -144,8 +145,10 @@ const BazaarManagement = () => {
     setLoading(true)
     try {
       const updated = [...registrations]
-      updated[index] = {
-        ...updated[index],
+      const idx = registrations.findIndex(r => r.id === row.id)
+      if (idx === -1) throw new Error('Registration not found')
+      updated[idx] = {
+        ...updated[idx],
         status: 'approved',
         updatedAt: new Date().toISOString(),
         reviewedBy: user.name
@@ -161,7 +164,7 @@ const BazaarManagement = () => {
     }
   }
 
-  const handleQuickReject = async (index) => {
+  const handleQuickReject = async (row) => {
     const { value: reason } = await Swal.fire({
       title: 'Tolak pendaftaran?',
       text: 'Masukkan alasan penolakan untuk supplier.',
@@ -183,8 +186,10 @@ const BazaarManagement = () => {
     setLoading(true)
     try {
       const updated = [...registrations]
-      updated[index] = {
-        ...updated[index],
+      const idx = registrations.findIndex(r => r.id === row.id)
+      if (idx === -1) throw new Error('Registration not found')
+      updated[idx] = {
+        ...updated[idx],
         status: 'rejected',
         adminNotes: reason,
         updatedAt: new Date().toISOString(),
@@ -201,8 +206,7 @@ const BazaarManagement = () => {
     }
   }
 
-  const handleDelete = async (index) => {
-    const row = registrations[index]
+  const handleDelete = async (row) => {
     const result = await Swal.fire({
       title: `Hapus pendaftaran?`,
       text: 'Pendaftaran ini akan dihapus secara permanen.',
@@ -308,25 +312,25 @@ const BazaarManagement = () => {
     },
     {
       name: 'Aksi',
-      cell: (row, i) => (
+      cell: (row) => (
         <>
           <Button size="sm" color="info" className="me-2" onClick={() => handleView(row)} disabled={loading}>
             <Eye size={16} />
           </Button>
-          <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
+          <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row)} disabled={loading}>
             <Edit size={16} />
           </Button>
           {row.status === 'pending' && (
             <>
-              <Button size="sm" color="success" className="me-2" onClick={() => handleQuickApprove(i)} disabled={loading}>
+              <Button size="sm" color="success" className="me-2" onClick={() => handleQuickApprove(row)} disabled={loading}>
                 <Check size={16} />
               </Button>
-              <Button size="sm" color="danger" className="me-2" onClick={() => handleQuickReject(i)} disabled={loading}>
+              <Button size="sm" color="danger" className="me-2" onClick={() => handleQuickReject(row)} disabled={loading}>
                 <X size={16} />
               </Button>
             </>
           )}
-          <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
+          <Button size="sm" color="danger" onClick={() => handleDelete(row)} disabled={loading}>
             <Trash2 size={16} />
           </Button>
         </>
