@@ -91,12 +91,18 @@ const BazaarRegistration = () => {
     }
   }, [productData, user])
 
-  const activeAnnouncements = announcements.filter(a => a.status === 'active')
+  const now = new Date()
+  const activeAnnouncements = announcements.filter(a => {
+    if (a.status !== 'active') return false
+    if (!a.registrationDeadline) return true
+    const deadline = new Date(a.registrationDeadline)
+    return now <= deadline
+  })
   const userRegistrations = registrations.filter(r => r.supplierName === user?.name)
 
   const lastRegistration = userRegistrations.length > 0
     ? userRegistrations.reduce((a, b) => new Date(a.createdAt) > new Date(b.createdAt) ? a : b)
-    : null;
+    : null
 
   const nonRejectedRegs = registrations.filter(
     r => r.announcementId === form.announcementId && r.status !== 'rejected'

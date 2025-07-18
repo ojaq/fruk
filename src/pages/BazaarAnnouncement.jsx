@@ -397,6 +397,18 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
 
   const lastAnnouncement = announcements.length > 0 ? announcements[announcements.length - 1] : null
 
+  useEffect(() => {
+    if (!modalOpen) return
+    const now = new Date()
+    const onlineEnd = form.onlineDateEnd ? new Date(form.onlineDateEnd) : null
+    const offline = form.offlineDate ? new Date(form.offlineDate) : null
+    let shouldClose = false
+    if (onlineEnd && now > onlineEnd && offline && now > offline) shouldClose = true
+    if (shouldClose && form.status !== 'closed') {
+      setForm(f => ({ ...f, status: 'closed' }))
+    }
+  }, [modalOpen, form.onlineDateEnd, form.offlineDate])
+
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
       <Row className="mb-3">
@@ -540,6 +552,16 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
                   type="date"
                   value={form.offlineDate}
                   onChange={e => setForm({ ...form, offlineDate: e.target.value })}
+                  disabled={loading}
+                />
+              </Col>
+
+              <Col xs="12" md="6" className="mb-3">
+                <Label>Deadline Pendaftaran *</Label>
+                <Input
+                  type="datetime-local"
+                  value={form.registrationDeadline}
+                  onChange={e => setForm({ ...form, registrationDeadline: e.target.value })}
                   disabled={loading}
                 />
               </Col>

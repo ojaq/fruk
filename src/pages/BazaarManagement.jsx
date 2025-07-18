@@ -173,7 +173,7 @@ const BazaarManagement = () => {
       cancelButtonText: 'Batal',
       inputValidator: (value) => {
         if (!value || !value.trim()) {
-          return 'Alasan penolakan wajib diisi!';
+          return 'Alasan penolakan wajib diisi!'
         }
       }
     })
