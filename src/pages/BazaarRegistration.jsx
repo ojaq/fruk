@@ -628,7 +628,6 @@ const BazaarRegistration = () => {
                       </Col>
                     </Row>
                   )}
-                  {/* Show rejection reason if rejected */}
                   {selectedRegistration.status === 'rejected' && selectedRegistration.adminNotes && (
                     <Row className="mt-2">
                       <Col xs="12">

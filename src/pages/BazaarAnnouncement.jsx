@@ -371,7 +371,6 @@ Bazaar Online ${formatDateRangeID(announcement.onlineDateStart, announcement.onl
 Kami batasi hanya untuk ${announcement.maxSuppliers} supplier saja dan maksimal hanya ${announcement.maxProductsPerSupplier} barang/supplier\nMengingat bazaar hanya sampai jam 12.00 WIB 🙏
 
 Pendaftaran ditutup ${formatDateTimeID(announcement.registrationDeadline)}
-(Harap membaca pesan yang disematkan terkait syarat dan ketentuan supplier bazaar)
 
 Online:\n${onlineList}
 
@@ -380,6 +379,8 @@ Offline:\n${offlineList}
 Untuk Bazaar Offline, batas pengiriman barang hari ${formatDateID(announcement.deliveryDate)} maksimal pukul ${announcement.deliveryTime || '-'} WIB
 ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
   }
+
+  const lastAnnouncement = announcements.length > 0 ? announcements[announcements.length - 1] : null
 
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
@@ -487,7 +488,7 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
                 <Label>Deskripsi *</Label>
                 <Input
                   type="textarea"
-                  rows="3"
+                  rows="6"
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
                   disabled={loading}
@@ -585,7 +586,7 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
                 <Label>Syarat dan Ketentuan</Label>
                 <Input
                   type="textarea"
-                  rows="4"
+                  rows="8"
                   value={form.terms}
                   onChange={e => setForm({ ...form, terms: e.target.value })}
                   disabled={loading}
@@ -596,6 +597,24 @@ ${announcement.terms ? `\nSyarat dan Ketentuan:\n${announcement.terms}` : ''}`
           </Form>
         </ModalBody>
         <ModalFooter>
+          <Button
+            color="warning"
+            className="mb-2"
+            disabled={loading || !lastAnnouncement}
+            onClick={() => {
+              if (lastAnnouncement) {
+                setForm(f => ({
+                  ...f,
+                  title: lastAnnouncement.title,
+                  greeting: lastAnnouncement.greeting,
+                  description: lastAnnouncement.description,
+                  terms: lastAnnouncement.terms
+                }))
+              }
+            }}
+          >
+            Gunakan Data dari Pengumuman Terakhir
+          </Button>
           <Button color="primary" onClick={handleSave} disabled={loading}>
             {loading ? 'Loading...' : (editIndex !== null ? 'Update' : 'Tambah')}
           </Button>
