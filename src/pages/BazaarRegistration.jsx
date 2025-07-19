@@ -216,7 +216,8 @@ const BazaarRegistration = () => {
       }
 
       const deadline = new Date(announcement.registrationDeadline)
-      if (new Date() > deadline) {
+      const now = new Date()
+      if (now > deadline) {
         Swal.fire('Error', 'Pendaftaran sudah ditutup!', 'error')
         setLoading(false)
         return
@@ -239,7 +240,7 @@ const BazaarRegistration = () => {
         participateOnline,
         participateOffline,
         notes,
-        status: editId ? (registrations.find(r => r.id === editId)?.status || 'pending') : 'pending',
+        status: editId ? 'pending' : 'pending',
         createdAt: editId ? (registrations.find(r => r.id === editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         selectedProducts: separateProducts ? [] : selectedProducts,
@@ -330,7 +331,10 @@ const BazaarRegistration = () => {
     setEditIndex(index)
     setEditId(row.id)
     setModalOpen(true)
-    setSeparateProducts(!!(row.selectedProductsOnline || row.selectedProductsOffline))
+    setSeparateProducts(
+      (Array.isArray(row.selectedProductsOnline) && row.selectedProductsOnline.length > 0) ||
+      (Array.isArray(row.selectedProductsOffline) && row.selectedProductsOffline.length > 0)
+    )
   }
 
   const handleView = (row) => {
@@ -465,23 +469,29 @@ const BazaarRegistration = () => {
     },
     {
       name: 'Aksi',
-      cell: (row, i) => (
-        <>
-          <Button size="sm" color="info" className="me-2" onClick={() => handleView(row)} disabled={loading}>
-            <Eye size={16} />
-          </Button>
-          {row.status === 'pending' && (
-            <>
-              <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
-                <Edit size={16} />
-              </Button>
-              <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
-                <Trash2 size={16} />
-              </Button>
-            </>
-          )}
-        </>
-      ),
+      cell: (row, i) => {
+        const announcement = announcements.find(a => a.id === row.announcementId)
+        const deadline = announcement ? new Date(announcement.registrationDeadline) : null
+        const now = new Date()
+        const canEditDelete = deadline && now <= deadline
+        return (
+          <>
+            <Button size="sm" color="info" className="me-2" onClick={() => handleView(row)} disabled={loading}>
+              <Eye size={16} />
+            </Button>
+            {canEditDelete && (
+              <>
+                <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
+                  <Edit size={16} />
+                </Button>
+                <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
+                  <Trash2 size={16} />
+                </Button>
+              </>
+            )}
+          </>
+        )
+      },
       width: '200px',
       wrap: true
     }
@@ -761,10 +771,31 @@ const BazaarRegistration = () => {
           </Form>
         </ModalBody>
         <ModalFooter>
-          {lastRegistration && lastRegistration.selectedProducts.length > 0 && (
+          {lastRegistration && (
             <Button
               color="warning"
-              onClick={() => setForm(f => ({ ...f, selectedProducts: lastRegistration.selectedProducts }))}
+              onClick={() => {
+                if (
+                  (Array.isArray(lastRegistration.selectedProductsOnline) && lastRegistration.selectedProductsOnline.length > 0) ||
+                  (Array.isArray(lastRegistration.selectedProductsOffline) && lastRegistration.selectedProductsOffline.length > 0)
+                ) {
+                  setSeparateProducts(true)
+                  setForm(f => ({
+                    ...f,
+                    selectedProducts: [],
+                    selectedProductsOnline: lastRegistration.selectedProductsOnline || [],
+                    selectedProductsOffline: lastRegistration.selectedProductsOffline || []
+                  }))
+                } else {
+                  setSeparateProducts(false)
+                  setForm(f => ({
+                    ...f,
+                    selectedProducts: lastRegistration.selectedProducts || [],
+                    selectedProductsOnline: [],
+                    selectedProductsOffline: []
+                  }))
+                }
+              }}
               disabled={loading}
             >
               Gunakan Produk dari Bazaar Terakhir
