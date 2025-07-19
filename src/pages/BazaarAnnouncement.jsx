@@ -383,7 +383,7 @@ ${announcement.description}
 
 Bazaar Online ${formatDateRangeID(announcement.onlineDateStart, announcement.onlineDateEnd)} (maksimal ${announcement.maxSuppliersOnline || '-'} supplier) dan Bazaar Offline ${formatDateID(announcement.offlineDate)} (maksimal ${announcement.maxSuppliersOffline || '-'} supplier)
 
-Kami batasi maksimal hanya ${announcement.maxProductsPerSupplier} barang/supplier\nMengingat bazaar hanya sampai jam 12.00 WIB 🙏
+Kami batasi maksimal hanya ${announcement.maxProductsPerSupplier} barang/supplier
 
 Pendaftaran ditutup ${formatDateTimeID(announcement.registrationDeadline)}
 
