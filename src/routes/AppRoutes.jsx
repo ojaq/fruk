@@ -12,6 +12,7 @@ import BazaarAnnouncement from '../pages/BazaarAnnouncement'
 import BazaarRegistration from '../pages/BazaarRegistration'
 import BazaarManagement from '../pages/BazaarManagement'
 import BazaarLogs from '../pages/BazaarLogs'
+import BazaarProducts from '../pages/BazaarProducts'
 import PrivateRoutes from './PrivateRoutes'
 
 const AppRoutes = () => {
@@ -92,6 +93,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoutes>
             <BazaarManagement />
+          </PrivateRoutes>
+        }
+      />
+      <Route
+        path="/bazaar-products"
+        element={
+          <PrivateRoutes>
+            <BazaarProducts />
           </PrivateRoutes>
         }
       />

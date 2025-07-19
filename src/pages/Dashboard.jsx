@@ -116,9 +116,9 @@ const Dashboard = () => {
       <h3>Halo, {user.name}</h3>
       <p>Role kamu sekarang: <strong>{user.role}</strong></p>
 
-      {user.name === 'admin' && (
+      {user.role === 'admin' && (
         <div className="mb-4">
-          <Button color="danger" onClick={() => navigate('/bazaar-logs')}>
+          <Button color="danger" onClick={() => navigate('/bazaar-logs')} className="me-2">
             Lihat Log Bazaar
           </Button>
         </div>
@@ -252,6 +252,11 @@ const Dashboard = () => {
               {pendingRegistrations > 0 && (
                 <span className="badge bg-danger py-2 px-3 ms-2">{pendingRegistrations}</span>
               )}
+            </li>
+            <li className="mb-2">Lihat <strong>Data Supplier per bazaar.</strong> &nbsp;
+              <Button color="primary" size="sm" onClick={() => navigate('/bazaar-products')}>
+                Lihat Produk Bazaar (per Pengumuman)
+              </Button>
             </li>
           </ul>
         </>
