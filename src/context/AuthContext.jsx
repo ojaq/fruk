@@ -232,6 +232,7 @@ export const AuthProvider = ({ children }) => {
 
       const updated = { ...productData, [name]: data }
       setProductData(updated)
+      await fetchProducts()
       Swal.fire('Berhasil', 'Data produk berhasil disimpan', 'success')
     } catch (error) {
       console.error('Error saving product data:', error)
@@ -254,6 +255,7 @@ export const AuthProvider = ({ children }) => {
       const existing = { ...weekData }
       const updated = { ...existing, [sheetName]: newSheetData }
       setWeekData(updated)
+      await fetchWeeks()
     } catch (error) {
       console.error('Error saving week data:', error)
       Swal.fire('Error', 'Gagal menyimpan data minggu', 'error')
