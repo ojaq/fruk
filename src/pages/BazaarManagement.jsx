@@ -4,6 +4,7 @@ import Swal from 'sweetalert2'
 import DataTable from 'react-data-table-component'
 import { Edit, Trash2, Eye, Check, X } from 'react-feather'
 import { useAuth } from '../context/AuthContext'
+import { logBazaarAction } from '../context/AuthContext'
 import Select from 'react-select'
 import moment from 'moment'
 import 'moment/locale/id'
@@ -77,6 +78,21 @@ const BazaarManagement = () => {
       if (editIndex !== null && editingRegistration) {
         const actualIndex = registrations.findIndex(r => r.id === editingRegistration.id)
         if (actualIndex !== -1) {
+          await logBazaarAction({
+            user,
+            action: 'edit',
+            target: 'registration',
+            targetId: editingRegistration.id,
+            dataBefore: registrations[actualIndex],
+            dataAfter: {
+              ...registrations[actualIndex],
+              status: form.status,
+              adminNotes: form.adminNotes,
+              updatedAt: new Date().toISOString(),
+              reviewedBy: user.name
+            },
+            description: `Edit registration status to ${form.status}`
+          })
           updated[actualIndex] = {
             ...updated[actualIndex],
             status: form.status,
@@ -85,6 +101,21 @@ const BazaarManagement = () => {
             reviewedBy: user.name
           }
         } else {
+          await logBazaarAction({
+            user,
+            action: 'edit',
+            target: 'registration',
+            targetId: editingRegistration.id,
+            dataBefore: updated[editIndex],
+            dataAfter: {
+              ...updated[editIndex],
+              status: form.status,
+              adminNotes: form.adminNotes,
+              updatedAt: new Date().toISOString(),
+              reviewedBy: user.name
+            },
+            description: `Edit registration status to ${form.status}`
+          })
           updated[editIndex] = {
             ...updated[editIndex],
             status: form.status,
@@ -147,6 +178,20 @@ const BazaarManagement = () => {
       const updated = [...registrations]
       const idx = registrations.findIndex(r => r.id === row.id)
       if (idx === -1) throw new Error('Registration not found')
+      await logBazaarAction({
+        user,
+        action: 'edit',
+        target: 'registration',
+        targetId: row.id,
+        dataBefore: registrations[idx],
+        dataAfter: {
+          ...registrations[idx],
+          status: 'approved',
+          updatedAt: new Date().toISOString(),
+          reviewedBy: user.name
+        },
+        description: 'Quick approve registration'
+      })
       updated[idx] = {
         ...updated[idx],
         status: 'approved',
@@ -188,6 +233,21 @@ const BazaarManagement = () => {
       const updated = [...registrations]
       const idx = registrations.findIndex(r => r.id === row.id)
       if (idx === -1) throw new Error('Registration not found')
+      await logBazaarAction({
+        user,
+        action: 'edit',
+        target: 'registration',
+        targetId: row.id,
+        dataBefore: registrations[idx],
+        dataAfter: {
+          ...registrations[idx],
+          status: 'rejected',
+          adminNotes: reason,
+          updatedAt: new Date().toISOString(),
+          reviewedBy: user.name
+        },
+        description: 'Quick reject registration'
+      })
       updated[idx] = {
         ...updated[idx],
         status: 'rejected',
@@ -225,6 +285,15 @@ const BazaarManagement = () => {
         Swal.fire('Error', 'Data tidak ditemukan', 'error')
         return
       }
+      await logBazaarAction({
+        user,
+        action: 'delete',
+        target: 'registration',
+        targetId: row.id,
+        dataBefore: registrations[actualIndex],
+        dataAfter: null,
+        description: 'Delete registration'
+      })
       const updated = [...registrations]
       updated.splice(actualIndex, 1)
       await saveBazaarData({ ...bazaarData, registrations: updated })

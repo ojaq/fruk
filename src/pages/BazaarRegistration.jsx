@@ -4,6 +4,7 @@ import Swal from 'sweetalert2'
 import DataTable from 'react-data-table-component'
 import { Edit, Trash2, Eye } from 'react-feather'
 import { useAuth } from '../context/AuthContext'
+import { logBazaarAction } from '../context/AuthContext'
 import Select from 'react-select'
 import moment from 'moment'
 import 'moment/locale/id'
@@ -247,18 +248,45 @@ const BazaarRegistration = () => {
       }
 
       let updated = [...registrations]
+      let isNew = false
+      let previousRegistration = null
       if (editId) {
         const idx = updated.findIndex(r => r.id === editId)
         if (idx !== -1) {
+          previousRegistration = updated[idx]
           updated[idx] = newRegistration
         } else {
           updated.push(newRegistration)
+          isNew = true
         }
       } else {
         updated.push(newRegistration)
+        isNew = true
       }
 
       await saveBazaarData({ ...bazaarData, registrations: updated })
+
+      if (isNew) {
+        await logBazaarAction({
+          user,
+          action: 'add',
+          target: 'registration',
+          targetId: newRegistration.id,
+          dataBefore: null,
+          dataAfter: newRegistration,
+          description: `User registered for bazaar: ${newRegistration.announcementId}`
+        })
+      } else if (editId && previousRegistration) {
+        await logBazaarAction({
+          user,
+          action: 'edit',
+          target: 'registration',
+          targetId: newRegistration.id,
+          dataBefore: previousRegistration,
+          dataAfter: newRegistration,
+          description: `User edited registration for bazaar: ${newRegistration.announcementId}`
+        })
+      }
 
       Swal.fire('Berhasil', `Pendaftaran berhasil ${editId ? 'diubah' : 'ditambahkan'}`, 'success')
 
@@ -349,6 +377,15 @@ const BazaarRegistration = () => {
         Swal.fire('Error', 'Data tidak ditemukan', 'error')
         return
       }
+      await logBazaarAction({
+        user,
+        action: 'delete',
+        target: 'registration',
+        targetId: row.id,
+        dataBefore: registrations[actualIndex],
+        dataAfter: null,
+        description: `User deleted registration for bazaar: ${row.announcementId}`
+      })
       const updated = [...registrations]
       updated.splice(actualIndex, 1)
       await saveBazaarData({ ...bazaarData, registrations: updated })

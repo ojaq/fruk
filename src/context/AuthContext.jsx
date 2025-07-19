@@ -369,3 +369,19 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   )
 }
+
+export async function logBazaarAction({ user, action, target, targetId, dataBefore, dataAfter, description }) {
+  try {
+    await supabase.from('bazaar_logs').insert([{
+      user_name: user?.name,
+      action,
+      target,
+      target_id: targetId,
+      data_before: dataBefore ? JSON.stringify(dataBefore) : null,
+      data_after: dataAfter ? JSON.stringify(dataAfter) : null,
+      description
+    }])
+  } catch (e) {
+    console.error('Failed to log bazaar action', e)
+  }
+}

@@ -116,6 +116,14 @@ const Dashboard = () => {
       <h3>Halo, {user.name}</h3>
       <p>Role kamu sekarang: <strong>{user.role}</strong></p>
 
+      {user.name === 'admin' && (
+        <div className="mb-4">
+          <Button color="danger" onClick={() => navigate('/bazaar-logs')}>
+            Lihat Log Bazaar
+          </Button>
+        </div>
+      )}
+
       {user.role === 'superadmin' && (
         <>
           <h5 className="mt-4">Permintaan Admin Baru</h5>
