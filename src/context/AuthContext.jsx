@@ -272,7 +272,7 @@ export const AuthProvider = ({ children }) => {
         return
       }
 
-      setBazaarData(newBazaarData)
+      await fetchBazaarData()
     } catch (error) {
       console.error('Error saving bazaar data:', error)
       Swal.fire('Error', 'Gagal menyimpan data bazaar', 'error')
