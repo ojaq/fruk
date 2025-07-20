@@ -475,21 +475,21 @@ const BazaarRegistration = () => {
         const now = new Date()
         const canEditDelete = deadline && now <= deadline
         return (
-          <>
-            <Button size="sm" color="info" className="me-2" onClick={() => handleView(row)} disabled={loading}>
-              <Eye size={16} />
-            </Button>
+        <>
+          <Button size="sm" color="info" className="me-2" onClick={() => handleView(row)} disabled={loading}>
+            <Eye size={16} />
+          </Button>
             {canEditDelete && (
-              <>
-                <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
-                  <Edit size={16} />
-                </Button>
-                <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
-                  <Trash2 size={16} />
-                </Button>
-              </>
-            )}
-          </>
+            <>
+              <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
+                <Edit size={16} />
+              </Button>
+              <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
+                <Trash2 size={16} />
+              </Button>
+            </>
+          )}
+        </>
         )
       },
       width: '200px',

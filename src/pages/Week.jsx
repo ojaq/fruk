@@ -85,12 +85,20 @@ const Week = () => {
     }
   }, [productData, registeredUsers, currentAnnouncement, allowedProducts])
 
+  const getAdjustedHJK = (val) => {
+    const num = parseFloat(val)
+    if (!num || num <= 0) return 0
+    return num < 1000 ? num * 1000 : num
+  }
+
   const handleSelectProduk = option => {
     const harga = option.data.hjk
+    const adjustedHJK = getAdjustedHJK(harga)
     setForm(f => ({
       ...f,
       produkLabel: option,
-      bayar: f.jumlah ? Number(f.jumlah) * Number(harga) : ''
+      bayar: f.jumlah ? Number(f.jumlah) * adjustedHJK : '',
+      adjustedHJK: adjustedHJK
     }))
   }
 
@@ -99,7 +107,8 @@ const Week = () => {
     setForm(f => ({
       ...f,
       jumlah: val,
-      bayar: f.produkLabel ? jumlah * Number(f.produkLabel.data.hjk) : ''
+      bayar: f.produkLabel ? jumlah * getAdjustedHJK(f.produkLabel.data.hjk) : '',
+      adjustedHJK: f.produkLabel ? getAdjustedHJK(f.produkLabel.data.hjk) : ''
     }))
   }
 
@@ -231,7 +240,8 @@ const Week = () => {
       name: 'Total Bayar',
       selector: r => {
         const bayar = parseFloat(r.bayar)
-        return `Rp${bayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+        if (!bayar || bayar <= 0) return '-'
+        return `Rp${bayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
       },
       width: "140px",
       wrap: true
@@ -351,8 +361,8 @@ const Week = () => {
               <Input
                 readOnly
                 value={
-                  form.bayar
-                    ? `Rp${parseFloat(form.bayar).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+                  form.bayar && parseFloat(form.bayar) > 0
+                    ? `Rp${parseFloat(form.bayar).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
                     : ''
                 }
                 disabled={loading || isAllWeek}

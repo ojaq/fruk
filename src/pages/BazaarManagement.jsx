@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Button, Col, Input, Label, Row, Modal, ModalHeader, ModalBody, ModalFooter, Card, CardBody, CardHeader, Form, FormGroup, Alert, Badge } from 'reactstrap'
 import Swal from 'sweetalert2'
 import DataTable from 'react-data-table-component'
-import { Edit, Trash2, Eye, Check, X } from 'react-feather'
+import { Edit, Trash2, Eye, Check, X, Download } from 'react-feather'
 import { useAuth } from '../context/AuthContext'
 import { logBazaarAction } from '../context/AuthContext'
 import Select from 'react-select'
@@ -444,6 +444,128 @@ const BazaarManagement = () => {
   const onlineCount = filteredData.filter(r => r.participateOnline).length
   const offlineCount = filteredData.filter(r => r.participateOffline).length
 
+  const handleExportCSV = () => {
+    try {
+      const headers = [
+        'Nama Supplier',
+        'Bazaar',
+        'Partisipasi Online',
+        'Partisipasi Offline',
+        'Jenis Partisipasi',
+        'Nama Produk',
+        'Jenis Produk',
+        'Ukuran',
+        'Satuan',
+        'HPP',
+        'HJK',
+        'Keterangan Produk',
+        'Label Produk',
+        'Gambar Produk',
+        'Catatan Supplier',
+        'Catatan Admin'
+      ]
+
+      const csvRows = [headers.join(',')]
+
+      filteredData.filter(r => r.status === 'approved').forEach(registration => {
+        const announcement = announcements.find(a => a.id === registration.announcementId)
+        const bazaarTitle = announcement ? announcement.title : 'N/A'
+        const regInfo = [
+          registration.supplierName,
+          bazaarTitle,
+          registration.participateOnline ? 'Ya' : 'Tidak',
+          registration.participateOffline ? 'Ya' : 'Tidak',
+        ]
+        const regTail = [
+          registration.notes || '',
+          registration.adminNotes || ''
+        ]
+        const escapeCSV = (value) => {
+          if (value === undefined || value === null) return ''
+          const stringValue = String(value)
+          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+            return `"${stringValue.replace(/"/g, '""')}"`
+          }
+          return stringValue
+        }
+        const formatPrice = (val) => {
+          const num = parseFloat(val)
+          if (!num || num <= 0) return ''
+          const adjusted = num < 1000 ? num * 1000 : num
+          return `Rp${adjusted.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+        }
+        const pushProductRow = (product, partisipasi) => {
+          if (!product) return
+          const d = product.data || {}
+          const row = [
+            regInfo[0], // Nama Supplier
+            regInfo[1], // Bazaar
+            regInfo[2], // Partisipasi Online
+            regInfo[3], // Partisipasi Offline
+            partisipasi, // Jenis Partisipasi
+            d.namaProduk || '',
+            d.jenisProduk || '',
+            d.ukuran || '',
+            d.satuan || '',
+            formatPrice(d.hpp),
+            formatPrice(d.hjk),
+            d.keterangan || '',
+            product.label || '',
+            d.imageUrl || '',
+            regTail[0], // Catatan Supplier
+            regTail[1]  // Catatan Admin
+          ]
+          csvRows.push(row.map(escapeCSV).join(','))
+        }
+        let hasProduct = false
+        if (registration.selectedProductsOnline && registration.selectedProductsOnline.length > 0) {
+          registration.selectedProductsOnline.forEach(product => {
+            pushProductRow(product, 'Online')
+            hasProduct = true
+          })
+        }
+        if (registration.selectedProductsOffline && registration.selectedProductsOffline.length > 0) {
+          registration.selectedProductsOffline.forEach(product => {
+            pushProductRow(product, 'Offline')
+            hasProduct = true
+          })
+        }
+        if (!hasProduct && registration.selectedProducts && registration.selectedProducts.length > 0) {
+          registration.selectedProducts.forEach(product => {
+            if (registration.participateOnline) {
+              pushProductRow(product, 'Online')
+              hasProduct = true
+            }
+            if (registration.participateOffline) {
+              pushProductRow(product, 'Offline')
+              hasProduct = true
+            }
+          })
+        }
+        if (!hasProduct) {
+          const emptyProduct = { data: {} }
+          pushProductRow(emptyProduct, '')
+        }
+      })
+
+      const csvContent = csvRows.join('\n')
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `bazaar_registrations_${moment().format('YYYY-MM-DD_HH-mm')}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      Swal.fire('Berhasil', 'Data berhasil diekspor ke CSV', 'success')
+    } catch (error) {
+      console.error('Error exporting CSV:', error)
+      Swal.fire('Error', 'Gagal mengekspor data ke CSV', 'error')
+    }
+  }
+
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
       <Row className="mb-3">
@@ -451,6 +573,10 @@ const BazaarManagement = () => {
           <h4>Manajemen Pendaftaran Bazaar</h4>
         </Col>
         <Col xs="12" md="6" className="text-end mt-2 mt-md-0">
+          <Button className="me-3" color="success" onClick={handleExportCSV} disabled={loading}>
+            <Download size={16} className="me-1" />
+            Export CSV
+          </Button>
           <Button className="me-3" color="danger" onClick={() => {
             setSearchText('')
             setFilterAnnouncement(null)

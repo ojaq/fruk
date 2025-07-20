@@ -222,14 +222,20 @@ const SupplierInvoice = () => {
       let firstRow = true
 
       group.items.forEach(item => {
+        const formatPrice = (val) => {
+          const num = parseFloat(val)
+          if (!num || num <= 0) return '-'
+          const adjusted = num < 1000 ? num * 1000 : num
+          return `Rp${adjusted.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+        }
         table.push([
           firstRow ? no : '',
           firstRow ? group.supplier : '',
           item.produk,
           item.pemesanCombined,
           item.jumlah,
-          `Rp${item.hpp.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`,
-          `Rp${item.total.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+          formatPrice(item.hpp),
+          formatPrice(item.total)
         ])
         firstRow = false
       })
@@ -241,7 +247,12 @@ const SupplierInvoice = () => {
         '',
         group.totalQty,
         '',
-        `Rp${group.totalHarga.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+        (() => {
+          const num = parseFloat(group.totalHarga)
+          if (!num || num <= 0) return '-'
+          const adjusted = num < 1000 ? num * 1000 : num
+          return `Rp${adjusted.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+        })()
       ])
 
       grandTotalQty += group.totalQty
@@ -256,7 +267,12 @@ const SupplierInvoice = () => {
       '',
       grandTotalQty,
       '',
-      `Rp${grandTotal.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+      (() => {
+        const num = parseFloat(grandTotal)
+        if (!num || num <= 0) return '-'
+        const adjusted = num < 1000 ? num * 1000 : num
+        return `Rp${adjusted.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+      })()
     ])
 
     autoTable(doc, {
@@ -361,8 +377,18 @@ const SupplierInvoice = () => {
                   { name: 'Produk', selector: r => r.produk, wrap: true },
                   { name: 'Pemesan', selector: r => r.pemesanCombined, wrap: true },
                   { name: 'Jumlah', selector: r => r.jumlah, wrap: true },
-                  { name: 'Harga Satuan', selector: r => `Rp${r.hpp.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, wrap: true },
-                  { name: 'Total Harga', selector: r => `Rp${r.total.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, wrap: true }
+                  { name: 'Harga Satuan', selector: r => {
+                    const hpp = parseFloat(r.hpp)
+                    if (!hpp || hpp <= 0) return '-'
+                    const adjusted = hpp < 1000 ? hpp * 1000 : hpp
+                    return `Rp${adjusted.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+                  }, wrap: true },
+                  { name: 'Total Harga', selector: r => {
+                    const total = parseFloat(r.total)
+                    if (!total || total <= 0) return '-'
+                    const adjusted = total < 1000 ? total * 1000 : total
+                    return `Rp${adjusted.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+                  }, wrap: true }
                 ]}
                 data={group.items}
                 pagination

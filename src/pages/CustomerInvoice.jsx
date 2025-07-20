@@ -75,7 +75,7 @@ const CustomerInvoice = () => {
 
       doc.setFont('helvetica', 'bold')
       const totalBayar = items.reduce((a, b) => a + Number(b.bayar), 0)
-      doc.text(`Balance Due: Rp${totalBayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, 195, 70, { align: 'right' })
+      doc.text(`Balance Due: Rp${totalBayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`, 195, 70, { align: 'right' })
 
       doc.setFontSize(10)
       doc.text('Bazaar FRUK', 15, 50)
@@ -102,8 +102,8 @@ const CustomerInvoice = () => {
         table.push([
           `${item.produkLabel}${item.catatan ? ` (${item.catatan})` : ''}`,
           qty,
-          `Rp${unit.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`,
-          `Rp${bayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+          `Rp${unit.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`,
+          `Rp${bayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
         ])
 
         totalQty += qty
@@ -113,7 +113,7 @@ const CustomerInvoice = () => {
         'TOTAL',
         totalQty,
         '',
-        `Rp${totalBayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+        `Rp${totalBayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
       ])
 
       autoTable(doc, {
@@ -180,8 +180,8 @@ const CustomerInvoice = () => {
           firstRow ? group.pemesan : '',
           `${item.produkLabel}${item.catatan ? ` (${item.catatan})` : ''}`,
           item.jumlah,
-          `Rp${unitPrice.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`,
-          `Rp${item.bayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+          `Rp${unitPrice.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`,
+          `Rp${item.bayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
         ])
         firstRow = false
         totalQty += item.jumlah
@@ -194,7 +194,7 @@ const CustomerInvoice = () => {
         '',
         totalQty,
         '',
-        `Rp${totalBayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+        `Rp${totalBayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
       ])
 
       no++
@@ -208,7 +208,7 @@ const CustomerInvoice = () => {
       '',
       grandTotalQty,
       '',
-      `Rp${grandTotalBayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+      `Rp${grandTotalBayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
     ])
 
     autoTable(doc, {
@@ -317,8 +317,16 @@ const CustomerInvoice = () => {
                 columns={[
                   { name: 'Produk', selector: row => `${row.produkLabel}${row.catatan ? ` (${row.catatan})` : ''}`, wrap: true },
                   { name: 'Jumlah', selector: row => row.jumlah, wrap: true },
-                  { name: 'Harga Satuan', selector: row => `Rp${(row.bayar / row.jumlah).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, wrap: true },
-                  { name: 'Total Bayar', selector: row => `Rp${row.bayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, wrap: true }
+                  { name: 'Harga Satuan', selector: row => {
+                    const unit = row.jumlah > 0 ? row.bayar / row.jumlah : 0
+                    if (!unit || unit <= 0) return '-'
+                    return `Rp${unit.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+                  }, wrap: true },
+                  { name: 'Total Bayar', selector: row => {
+                    const bayar = row.bayar
+                    if (!bayar || bayar <= 0) return '-'
+                    return `Rp${bayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+                  }, wrap: true }
                 ]}
                 data={group.items}
                 pagination
