@@ -118,14 +118,24 @@ const BazaarProducts = () => {
     },
     {
       name: 'HPP',
-      selector: row => row.hpp ? `Rp${parseFloat(row.hpp).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}` : '-',
+      selector: row => {
+        const hpp = parseFloat(row.hpp)
+        if (!hpp || hpp <= 0) return '-'
+        const adjustedValue = hpp < 1000 ? hpp * 1000 : hpp
+        return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+      },
       sortable: true,
       width: '120px',
       wrap: true
     },
     {
       name: 'HJK',
-      selector: row => row.hjk ? `Rp${parseFloat(row.hjk).toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}` : '-',
+      selector: row => {
+        const hjk = parseFloat(row.hjk)
+        if (!hjk || hjk <= 0) return '-'
+        const adjustedValue = hjk < 1000 ? hjk * 1000 : hjk
+        return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+      },
       sortable: true,
       width: '120px',
       wrap: true

@@ -302,7 +302,9 @@ const DataSupplier = () => {
       name: 'HPP',
       selector: row => {
         const hpp = parseFloat(row.hpp)
-        return `Rp${hpp.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+        if (!hpp || hpp <= 0) return '-'
+        const adjustedValue = hpp < 1000 ? hpp * 1000 : hpp
+        return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
       },
       sortable: true,
       width: "120px",
@@ -312,7 +314,9 @@ const DataSupplier = () => {
       name: 'HJK',
       selector: row => {
         const hjk = parseFloat(row.hjk)
-        return `Rp${hjk.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+        if (!hjk || hjk <= 0) return '-'
+        const adjustedValue = hjk < 1000 ? hjk * 1000 : hjk
+        return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
       },
       sortable: true,
       width: "120px",
