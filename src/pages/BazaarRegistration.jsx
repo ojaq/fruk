@@ -654,28 +654,27 @@ const BazaarRegistration = () => {
                       options={userProducts}
                       value={form.selectedProductsOnline}
                       onChange={selected => {
-                        const baseSet = new Set(selected.map(p => getDynamicBaseProduct(p.label, selected.map(x => x.label))))
-                        if (baseSet.size <= maxProducts) {
+                        const jenisSet = new Set(selected.map(p => p.data.jenisProduk))
+                        if (jenisSet.size <= maxProducts) {
                           setForm(f => ({ ...f, selectedProductsOnline: selected }))
                         }
                       }}
-                      placeholder={`Pilih produk untuk bazaar online (maks ${maxProducts} produk utama, maksimal ${maxSuppliersOnline} supplier)`}
+                      placeholder={`Pilih produk untuk bazaar online (maks ${maxProducts} jenis produk, maksimal ${maxSuppliersOnline} supplier)`}
                       isDisabled={loading || !form.participateOnline}
                     />
                     {(() => {
-                      const baseProductsOnline = form.selectedProductsOnline.map(p => getDynamicBaseProduct(p.label, form.selectedProductsOnline.map(x => x.label)))
-                      const uniqueBaseProductsOnline = Array.from(new Set(baseProductsOnline))
+                      const jenisSet = new Set(form.selectedProductsOnline.map(p => p.data.jenisProduk))
                       return (
-                        <small className={`${uniqueBaseProductsOnline.length >= maxProducts ? 'text-danger' : 'text-muted'}`}>
-                          Pilih produk untuk Bazaar Online (maks {maxProducts} produk utama)
-                          {uniqueBaseProductsOnline.length > 0 && (
+                        <small className={`${jenisSet.size >= maxProducts ? 'text-danger' : 'text-muted'}`}>
+                          Pilih produk untuk Bazaar Online (maks {maxProducts} jenis produk)
+                          {jenisSet.size > 0 && (
                             <span className="ms-2">
-                              ({uniqueBaseProductsOnline.length}/{maxProducts} produk utama terpilih)
+                              ({jenisSet.size}/{maxProducts} jenis produk terpilih)
                             </span>
                           )}
-                          {form.selectedProductsOnline.length > uniqueBaseProductsOnline.length && (
+                          {form.selectedProductsOnline.length > jenisSet.size && (
                             <span className="ms-2 text-info">
-                              ({form.selectedProductsOnline.length - uniqueBaseProductsOnline.length} varian/variasi)
+                              ({form.selectedProductsOnline.length - jenisSet.size} varian/variasi)
                             </span>
                           )}
                         </small>
@@ -730,26 +729,33 @@ const BazaarRegistration = () => {
                     options={userProducts}
                     value={form.selectedProducts}
                     onChange={selected => {
-                      const baseSet = new Set(selected.map(p => getDynamicBaseProduct(p.label, selected.map(x => x.label))))
-                      if (baseSet.size <= maxProducts) {
+                      const jenisSet = new Set(selected.map(p => p.data.jenisProduk))
+                      if (jenisSet.size <= maxProducts) {
                         setForm(f => ({ ...f, selectedProducts: selected }))
                       }
                     }}
-                    placeholder={`Pilih produk yang akan dijual di bazaar ini (maks ${maxProducts} produk utama, maksimal ${Math.max(maxSuppliersOnline, maxSuppliersOffline)} supplier)`}
+                    placeholder={`Pilih produk yang akan dijual di bazaar ini (maks ${maxProducts} jenis produk, maksimal ${Math.max(maxSuppliersOnline, maxSuppliersOffline)} supplier)`}
                     isDisabled={loading}
                   />
-                  <small className={`${isAtMaxProducts ? 'text-danger' : 'text-muted'}`}>
-                    Pilih produk yang akan Anda jual di bazaar ini (maks {maxProducts} produk utama)
-                    {uniqueBaseProducts.length > 0 && (
-                      <span className="ms-2">
-                        ({uniqueBaseProducts.length}/{maxProducts} produk utama terpilih)
-                      </span>
-                    )}
-                    {form.selectedProducts.length > uniqueBaseProducts.length && (
-                      <span className="ms-2 text-info">
-                        ({form.selectedProducts.length - uniqueBaseProducts.length} varian/variasi)
-                      </span>
-                    )}
+                  <small className={`${new Set(form.selectedProducts.map(p => p.data.jenisProduk)).size >= maxProducts ? 'text-danger' : 'text-muted'}`}>
+                    Pilih produk yang akan Anda jual di bazaar ini (maks {maxProducts} jenis produk)
+                    {(() => {
+                      const jenisSet = new Set(form.selectedProducts.map(p => p.data.jenisProduk))
+                      return (
+                        <>
+                          {jenisSet.size > 0 && (
+                            <span className="ms-2">
+                              ({jenisSet.size}/{maxProducts} jenis produk terpilih)
+                            </span>
+                          )}
+                          {form.selectedProducts.length > jenisSet.size && (
+                            <span className="ms-2 text-info">
+                              ({form.selectedProducts.length - jenisSet.size} varian/variasi)
+                            </span>
+                          )}
+                        </>
+                      )
+                    })()}
                   </small>
                 </Col>
               </Row>
