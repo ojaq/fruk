@@ -34,7 +34,7 @@ const SupplierInvoice = () => {
               produk: label,
               hpp: Number(item.hpp),
               key: label,
-              keterangan: item.keterangan
+              catatan: item.catatan
             }
           }
         })
@@ -42,12 +42,12 @@ const SupplierInvoice = () => {
 
       if (!found) return
 
-      const fullKey = `${found.supplier}|${found.key}`
+      const fullKey = `${found.supplier}|${found.key}|${row.catatan || ''}`
 
       if (!supplierMap[fullKey]) {
         supplierMap[fullKey] = {
           namaSupplier: found.supplier,
-          produk: found.produk + (row.keterangan ? ` (${row.keterangan})` : ''),
+          produk: found.produk + (row.catatan ? ` (${row.catatan})` : ''),
           pemesanList: {},
           jumlah: 0,
           hpp: found.hpp
