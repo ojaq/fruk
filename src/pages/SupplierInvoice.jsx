@@ -27,7 +27,8 @@ const SupplierInvoice = () => {
       let found = null
       Object.entries(productData).forEach(([user, items]) => {
         items.forEach(item => {
-          const label = `${item.namaProduk} ${item.ukuran} ${item.satuan}`
+          const label = `${item.namaProduk} ${item.ukuran} ${item.satuan}`.trim()
+          if (label.trim() === produkKey.trim() && item.aktif)
           if (label === produkKey && item.aktif) {
             found = {
               supplier: item.namaSupplier || user,
