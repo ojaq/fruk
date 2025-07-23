@@ -21,11 +21,15 @@ const CustomerInvoice = () => {
 
     raw.forEach(row => {
       const key = `${row.pemesan}|${row.produkLabel}|${row.keterangan}`
+      const qty = Number(row.jumlah)
+      const rawBayar = Number(row.bayar)
+      const adjustedBayar = rawBayar > 0 && rawBayar < 1000 ? rawBayar * 1000 : rawBayar
+
       if (!map[key]) {
-        map[key] = { ...row, jumlah: Number(row.jumlah), bayar: Number(row.bayar) }
+        map[key] = { ...row, jumlah: qty, bayar: adjustedBayar }
       } else {
-        map[key].jumlah += Number(row.jumlah)
-        map[key].bayar += Number(row.bayar)
+        map[key].jumlah += qty
+        map[key].bayar += adjustedBayar
       }
     })
 
@@ -320,12 +324,14 @@ const CustomerInvoice = () => {
                   { name: 'Harga Satuan', selector: row => {
                     const unit = row.jumlah > 0 ? row.bayar / row.jumlah : 0
                     if (!unit || unit <= 0) return '-'
-                    return `Rp${unit.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+                    const adjustedValue = unit < 1000 ? unit * 1000 : unit
+                    return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
                   }, wrap: true },
                   { name: 'Total Bayar', selector: row => {
                     const bayar = row.bayar
                     if (!bayar || bayar <= 0) return '-'
-                    return `Rp${bayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+                    const adjustedValue = bayar < 1000 ? bayar * 1000 : bayar
+                    return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
                   }, wrap: true }
                 ]}
                 data={group.items}

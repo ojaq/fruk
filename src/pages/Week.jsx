@@ -243,7 +243,8 @@ const Week = () => {
       selector: r => {
         const bayar = parseFloat(r.bayar)
         if (!bayar || bayar <= 0) return '-'
-        return `Rp${bayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
+        const adjustedValue = bayar < 1000 ? bayar * 1000 : bayar
+        return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
       },
       width: "140px",
       wrap: true

@@ -61,9 +61,11 @@ const SupplierInvoice = () => {
     const bySupplier = {}
 
     Object.values(supplierMap).forEach(item => {
+      const adjustedHPP = item.hpp < 1000 ? item.hpp * 1000 : item.hpp
       const entry = {
         ...item,
-        total: item.jumlah * item.hpp,
+        hpp: adjustedHPP,
+        total: item.jumlah * adjustedHPP,
         pemesanCombined: Object.entries(item.pemesanList)
           .map(([name, qty]) => `${name}(${qty})`).join(', ')
       }
@@ -74,7 +76,10 @@ const SupplierInvoice = () => {
 
     const arr = Object.entries(bySupplier).map(([supplier, list], i) => {
       const totalQty = list.reduce((a, b) => a + b.jumlah, 0)
-      const totalHarga = list.reduce((a, b) => a + b.total, 0)
+      const totalHarga = list.reduce((a, b) => {
+        const adjusted = b.total < 1000 ? b.total * 1000 : b.total
+        return a + adjusted
+      }, 0)
       return {
         id: i + 1,
         supplier,
@@ -118,7 +123,7 @@ const SupplierInvoice = () => {
 
       doc.setFont('helvetica', 'bold')
       const totalBayar = items.reduce((a, b) => a + Number(b.total), 0)
-      doc.text(`Balance Due: Rp${totalBayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`, 195, 70, { align: 'right' })
+      doc.text(`Balance Due: Rp${totalBayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`, 195, 70, { align: 'right' })
 
       doc.setFontSize(10)
       doc.text('Bazaar FRUK', 15, 50)
@@ -137,15 +142,16 @@ const SupplierInvoice = () => {
 
       items.forEach(item => {
         const qty = Number(item.jumlah)
-        const unit = Number(item.hpp)
+        const rawUnit = Number(item.hpp)
+        const unit = rawUnit < 1000 ? rawUnit * 1000 : rawUnit
         const total = Number(item.total)
 
         table.push([
           item.produk,
           item.pemesanCombined,
           qty,
-          `Rp${unit.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`,
-          `Rp${total.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+          `Rp${unit.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`,
+          `Rp${total.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
         ])
 
         totalQty += qty
@@ -156,7 +162,7 @@ const SupplierInvoice = () => {
         '',
         totalQty,
         '',
-        `Rp${totalBayar.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`
+        `Rp${totalBayar.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
       ])
 
       autoTable(doc, {
@@ -403,7 +409,7 @@ const SupplierInvoice = () => {
             <Row>
               <Col xs="12" md="6" className="text-start mb-2 mb-md-0">
                 <strong>Total Qty:</strong> {group.totalQty} &nbsp; | &nbsp;
-                <strong>Total:</strong> Rp{group.totalHarga.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
+                <strong>Total:</strong> Rp{group.totalHarga.toLocaleString('id-ID', { maximumFractionDigits: 0 })}
               </Col>
               <Col xs="12" md="6" className="text-end">
                 <Button color="primary" size="sm" onClick={() => sendInvoice(group.supplier, group.items, num)}>
