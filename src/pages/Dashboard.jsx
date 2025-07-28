@@ -112,7 +112,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5" style={{ paddingBottom: '70px' }}>
       <h3>Halo, {user.name}</h3>
       <p>Role kamu sekarang: <strong>{user.role}</strong></p>
 
