@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Button, Col, Input, Label, Row, Modal, ModalHeader, ModalBody, ModalFooter, Card, CardBody, CardHeader, Form, FormGroup, Alert, Badge } from 'reactstrap'
+import { Button, Col, Input, Label, Row, Modal, ModalHeader, ModalBody, ModalFooter, Card, CardBody, CardHeader, Form, FormGroup, Alert, Badge, Spinner } from 'reactstrap'
 import Swal from 'sweetalert2'
 import DataTable from 'react-data-table-component'
 import { Edit, Trash2, Eye, Check, X, Download } from 'react-feather'
@@ -9,6 +9,7 @@ import Select from 'react-select'
 import moment from 'moment'
 import 'moment/locale/id'
 moment.locale('id')
+import { supabase } from '../supabaseClient'
 
 const MONTHS_ID = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -43,6 +44,11 @@ const BazaarManagement = () => {
   const [filterStatus, setFilterStatus] = useState(null)
   const [editingRegistration, setEditingRegistration] = useState(null)
   const [filterParticipation, setFilterParticipation] = useState('all')
+  const [fixModalOpen, setFixModalOpen] = useState(false)
+  const [missingRegistrations, setMissingRegistrations] = useState([])
+  const [checkingFix, setCheckingFix] = useState(false)
+  const [selectedFixReg, setSelectedFixReg] = useState(null)
+  const [selectedFixIds, setSelectedFixIds] = useState(new Set())
 
   const [form, setForm] = useState({
     status: '',
@@ -154,6 +160,77 @@ const BazaarManagement = () => {
     setEditIndex(idx)
     setEditingRegistration(row)
     setModalOpen(true)
+  }
+
+  const handleCheckMissingRegistrations = async () => {
+    if (!filterAnnouncement?.value) {
+      Swal.fire('Error', 'Pilih bazaar terlebih dahulu untuk memulai pengecekan.', 'error')
+      return
+    }
+    setCheckingFix(true)
+    try {
+      const { data: logs, error } = await supabase
+        .from('bazaar_logs')
+        .select('*')
+        .eq('action', 'add')
+        .eq('target', 'registration')
+        .order('timestamp', { ascending: false })
+
+      if (error) throw new Error('Gagal mengambil log pendaftaran')
+
+      const existingMap = new Set(
+        registrations.map(r => `${r.announcementId}|${r.supplierName}`)
+      )
+
+      const seen = new Set()
+      const found = []
+      for (const log of logs) {
+        const after = log.data_after ? JSON.parse(log.data_after) : null
+        if (!after) continue
+        if (after.announcementId !== filterAnnouncement.value) continue
+        const key = `${after.announcementId}|${after.supplierName}`
+        if (!seen.has(key) && !existingMap.has(key)) {
+          found.push(after)
+          seen.add(key)
+        }
+      }
+
+      setMissingRegistrations(found)
+      setSelectedFixIds(new Set(found.map(r => r.id)))
+      setSelectedFixReg(null)
+      setFixModalOpen(true)
+    } catch (err) {
+      console.error('Fixer check failed:', err)
+      Swal.fire('Error', err.message, 'error')
+    } finally {
+      setCheckingFix(false)
+    }
+  }
+
+  const handleAddMissingRegistrations = async () => {
+    try {
+      const selectedData = missingRegistrations.filter(r => selectedFixIds.has(r.id))
+      const updated = [...registrations, ...selectedData]
+      await saveBazaarData({ ...bazaarData, registrations: updated })
+
+      for (const reg of selectedData) {
+        await logBazaarAction({
+          user,
+          action: 'restore',
+          target: 'registration',
+          targetId: reg.id,
+          dataBefore: null,
+          dataAfter: reg,
+          description: 'Restored missing registration via fixer tool'
+        })
+      }
+
+      Swal.fire('Berhasil', 'Pendaftaran berhasil dipulihkan', 'success')
+      setFixModalOpen(false)
+    } catch (err) {
+      console.error('Restore failed:', err)
+      Swal.fire('Error', 'Gagal memulihkan pendaftaran', 'error')
+    }
   }
 
   const handleView = (row) => {
@@ -573,6 +650,9 @@ const BazaarManagement = () => {
           <h4>Manajemen Pendaftaran Bazaar</h4>
         </Col>
         <Col xs="12" md="6" className="text-end mt-2 mt-md-0">
+          <Button className="me-3" color="info" onClick={handleCheckMissingRegistrations} disabled={checkingFix}>
+            {checkingFix ? <Spinner size="sm" /> : '🔍 Cek Pendaftaran Hilang'}
+          </Button>
           <Button className="me-3" color="success" onClick={handleExportCSV} disabled={loading}>
             <Download size={16} className="me-1" />
             Export CSV
@@ -844,6 +924,74 @@ const BazaarManagement = () => {
             </div>
           )}
         </ModalBody>
+      </Modal>
+
+      <Modal isOpen={fixModalOpen} toggle={() => {
+        setFixModalOpen(!fixModalOpen)
+        setSelectedFixReg(null)
+      }} size="lg">
+        <ModalHeader toggle={() => setFixModalOpen(!fixModalOpen)}>Data Pendaftaran Hilang</ModalHeader>
+        <ModalBody>
+          {missingRegistrations.length === 0 ? (
+            <Alert color="success">Tidak ada data yang hilang</Alert>
+          ) : (
+            <>
+              <p>Ditemukan <strong>{missingRegistrations.length}</strong> pendaftaran yang belum tercatat:</p>
+              <ul className="list-unstyled">
+                {missingRegistrations.map((reg, i) => (
+                  <li key={reg.id} className="mb-2">
+                    <Input
+                      type="checkbox"
+                      checked={selectedFixIds.has(reg.id)}
+                      onChange={e => {
+                        const copy = new Set(selectedFixIds)
+                        if (e.target.checked) copy.add(reg.id)
+                        else copy.delete(reg.id)
+                        setSelectedFixIds(copy)
+                      }}
+                      className="me-2"
+                    />
+                    <b>{reg.supplierName}</b>{' '}
+                    <Eye size={20} style={{ cursor: 'pointer' }} onClick={() => setSelectedFixReg(reg)} />{' '}
+                    ({formatDateID(reg.createdAt)})
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {selectedFixReg && (
+            <div className="mt-4">
+              <h6>Detail Pendaftaran</h6>
+              <div className="border p-2 bg-light rounded" style={{ overflow: 'auto' }}>
+                <p><strong>Nama:</strong> {selectedFixReg.supplierName}</p>
+                <p><strong>Online:</strong> {selectedFixReg.participateOnline ? 'Ya' : 'Tidak'}</p>
+                <p><strong>Offline:</strong> {selectedFixReg.participateOffline ? 'Ya' : 'Tidak'}</p>
+                <p><strong>Catatan:</strong> {selectedFixReg.notes || '-'}</p>
+                <p><strong>Produk:</strong></p>
+                <ul>
+                  {(selectedFixReg.selectedProducts || []).map((p, i) => (
+                    <li key={i}>{p.label}</li>
+                  ))}
+                  {(selectedFixReg.selectedProductsOnline || []).map((p, i) => (
+                    <li key={`on-${i}`}>{p.label} <small>(Online)</small></li>
+                  ))}
+                  {(selectedFixReg.selectedProductsOffline || []).map((p, i) => (
+                    <li key={`off-${i}`}>{p.label} <small>(Offline)</small></li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          {missingRegistrations.length > 0 && (
+            <Button color="primary" onClick={handleAddMissingRegistrations}>Tambahkan ke Registrasi</Button>
+          )}
+          <Button color="secondary" onClick={() => {
+            setFixModalOpen(false)
+            setSelectedFixReg(null)
+          }}>Tutup</Button>
+        </ModalFooter>
       </Modal>
     </div>
   )
