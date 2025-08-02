@@ -12,7 +12,7 @@ const BazaarLogs = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (user?.name !== 'admin') return
+    if (user?.role !== 'admin') return
     const fetchLogs = async () => {
       setLoading(true)
       const { data, error } = await supabase
@@ -25,7 +25,7 @@ const BazaarLogs = () => {
     fetchLogs()
   }, [user])
 
-  if (user?.name !== 'admin') {
+  if (user?.role !== 'admin') {
     return <Alert color="danger" className="mt-5">Akses hanya untuk admin.</Alert>
   }
 
