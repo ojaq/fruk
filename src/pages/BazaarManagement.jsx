@@ -169,6 +169,25 @@ const BazaarManagement = () => {
     }
     setCheckingFix(true)
     try {
+      const { data: allBazaarData, error: fetchError } = await supabase
+        .from('bazaar_data')
+        .select('data')
+
+      if (fetchError) throw new Error('Gagal mengambil data bazaar')
+
+      let freshRegistrations = []
+
+      for (const item of allBazaarData) {
+        const anns = item.data?.announcements || []
+        const regs = item.data?.registrations || []
+
+        const isMatched = anns.some(a => a.id === filterAnnouncement.value)
+        if (isMatched) {
+          freshRegistrations = regs
+          break
+        }
+      }
+
       const { data: logs, error } = await supabase
         .from('bazaar_logs')
         .select('*')
@@ -179,7 +198,7 @@ const BazaarManagement = () => {
       if (error) throw new Error('Gagal mengambil log pendaftaran')
 
       const existingMap = new Set(
-        registrations.map(r => `${r.announcementId}|${r.supplierName}`)
+        freshRegistrations.map(r => `${r.announcementId}|${r.supplierName}`)
       )
 
       const seen = new Set()
