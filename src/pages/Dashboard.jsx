@@ -99,7 +99,12 @@ const Dashboard = () => {
   let unregisteredAnnouncements = []
   let rejectedAnnouncements = []
   if ((user.role === 'supplier') || (user.role === 'admin' && !adminView)) {
-    const activeAnnouncements = (bazaarData?.announcements || []).filter(a => a.status === 'active')
+    const now = new Date()
+    const activeAnnouncements = (bazaarData?.announcements || []).filter(a => {
+      if (a.status !== 'active') return false
+      if (!a.registrationDeadline) return true
+      return new Date(a.registrationDeadline) > now
+    })
     const myRegs = (bazaarData?.registrations || []).filter(
       r => r.supplierName && r.supplierName.trim().toLowerCase() === user.name.trim().toLowerCase()
     )
