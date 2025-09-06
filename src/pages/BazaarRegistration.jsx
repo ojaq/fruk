@@ -45,6 +45,9 @@ function formatDateTimeID(dateStr) {
   const menit = d.getMinutes().toString().padStart(2, '0')
   return `${d.getDate().toString().padStart(2, '0')} ${MONTHS_ID[d.getMonth()]} ${d.getFullYear()} ${jam}:${menit}`
 }
+function getSupplierName(user) {
+  return user?.profile?.namaSupplier || user?.name || ''
+}
 
 const BazaarRegistration = () => {
   const { user, bazaarData, saveBazaarData, productData } = useAuth()
@@ -59,10 +62,11 @@ const BazaarRegistration = () => {
   const [loading, setLoading] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [separateProducts, setSeparateProducts] = useState(false)
+  const supplierKey = getSupplierName(user).trim().toLowerCase()
 
   const [form, setForm] = useState({
     announcementId: '',
-    supplierName: user?.name || '',
+    supplierName: user?.profile.namaSupplier || '',
     participateOnline: false,
     participateOffline: false,
     selectedProducts: [],
@@ -99,7 +103,7 @@ const BazaarRegistration = () => {
     const deadline = new Date(a.registrationDeadline)
     return now <= deadline
   })
-  const userRegistrations = registrations.filter(r => r.supplierName === user?.name)
+  const userRegistrations = registrations.filter(r => r.supplierName === supplierKey || r.supplierName === user?.name || r.supplierName === user?.profile?.namaSupplier)
 
   const lastRegistration = userRegistrations.length > 0
     ? userRegistrations.reduce((a, b) => new Date(a.createdAt) > new Date(b.createdAt) ? a : b)
@@ -293,7 +297,7 @@ const BazaarRegistration = () => {
 
       setForm({
         announcementId: '',
-        supplierName: user?.name || '',
+        supplierName: getSupplierName(user),
         participateOnline: false,
         participateOffline: false,
         selectedProducts: [],
@@ -345,7 +349,7 @@ const BazaarRegistration = () => {
   const handleAdd = () => {
     setForm({
       announcementId: '',
-      supplierName: user?.name || '',
+      supplierName: getSupplierName(user),
       participateOnline: false,
       participateOffline: false,
       selectedProducts: [],
