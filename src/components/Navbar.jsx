@@ -38,8 +38,6 @@ const NavbarComponent = () => {
   }, [profile, user])
 
   const handleSave = async () => {
-    if (user?.role !== 'supplier') return
-
     const { namaSupplier, namaBank, namaPenerima, noRekening } = form
     const newErrors = {}
 
