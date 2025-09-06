@@ -200,7 +200,7 @@ const NavbarComponent = () => {
         </ModalBody>
 
         <ModalFooter>
-          <Button color="primary" onClick={handleSave} disabled={user?.role !== 'supplier'}>Simpan</Button>
+          <Button color="primary" onClick={handleSave}>Simpan</Button>
           <Button color="secondary" onClick={toggleProfileModal}>Batal</Button>
         </ModalFooter>
       </Modal>
