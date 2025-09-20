@@ -50,7 +50,6 @@ const DataSupplier = () => {
   const data = (productData[username] || []).slice().sort((a, b) => (a.namaProduk || '').toLowerCase().localeCompare((b.namaProduk || '').toLowerCase()))
 
   const uniqueNamaProduk = [...new Set(data.map(d => d.namaProduk))].sort((a, b) => a.localeCompare(b))
-  const uniqueJenisProduk = [...new Set(data.map(d => d.jenisProduk))].sort((a, b) => a.localeCompare(b))
 
   const handleSave = async () => {
     setLoading(true)
@@ -446,10 +445,23 @@ const DataSupplier = () => {
             </Col>
             <Col xs="12" sm="6" md="4" className="mb-2 mb-md-3">
               <Label>Jenis Produk *</Label>
-              <Input value={form.jenisProduk} onChange={e => setForm({ ...form, jenisProduk: e.target.value })} disabled={loading} list="jenis-produk-suggestions" />
-              <datalist id="jenis-produk-suggestions">
-                {uniqueJenisProduk.map((j, i) => <option key={i} value={j} />)}
-              </datalist>
+              <Input
+                type="select"
+                value={form.jenisProduk}
+                onChange={e => setForm({ ...form, jenisProduk: e.target.value })}
+                disabled={loading}
+                required
+              >
+                <option value="">Pilih Jenis</option>
+                <option value="Makanan">Makanan</option>
+                <option value="Minuman">Minuman</option>
+                <option value="Frozen Food">Frozen Food</option>
+                <option value="Toiletries">Toiletries</option>
+                <option value="Buku">Buku</option>
+                <option value="Pakaian">Pakaian</option>
+                <option value="Kebutuhan Rumah Tangga">Kebutuhan Rumah Tangga</option>
+                <option value="Mainan">Mainan</option>
+              </Input>
             </Col>
             <Col xs="6" sm="3" md="2" className="mb-2 mb-md-3">
               <Label>Ukuran *</Label>
