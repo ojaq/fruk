@@ -387,3 +387,19 @@ export async function logBazaarAction({ user, action, target, targetId, dataBefo
     console.error('Failed to log bazaar action', e)
   }
 }
+
+export const logWeekAction = async ({ user, action, sheetName, entryBefore, entryAfter, description }) => {
+  try {
+    await supabase.from('week_logs').insert([{
+      user_name: user?.name,
+      action,
+      target: 'week_entry',
+      target_id: entryAfter?.id || `${sheetName}|${entryAfter?.pemesan}|${entryAfter?.produkLabel}`,
+      data_before: entryBefore ? JSON.stringify(entryBefore) : null,
+      data_after: entryAfter ? JSON.stringify(entryAfter) : null,
+      description,
+    }])
+  } catch (err) {
+    console.error('Error logging week action:', err)
+  }
+}

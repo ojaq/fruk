@@ -126,6 +126,9 @@ const Dashboard = () => {
           <Button color="danger" onClick={() => navigate('/bazaar-logs')} className="me-2">
             Lihat Log Bazaar
           </Button>
+          <Button color="danger" onClick={() => navigate('/week-logs')} className="me-2">
+            Lihat Log Week
+          </Button>
         </div>
       )}
 

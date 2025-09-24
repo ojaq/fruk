@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Col, Form, FormGroup, Input, Label, Row } from 'reactstrap'
+import { Alert, Button, Col, Form, FormGroup, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader, Row } from 'reactstrap'
 import DataTable from 'react-data-table-component'
 import { Edit, Trash2 } from 'react-feather'
 import Select from 'react-select'
 import Swal from 'sweetalert2'
-import { useAuth } from '../context/AuthContext'
+import { logWeekAction, useAuth } from '../context/AuthContext'
 import { useParams } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 
 const Week = () => {
-  const { productData, registeredUsers, weekData, saveWeekData, bazaarData } = useAuth()
+  const { productData, registeredUsers, weekData, saveWeekData, bazaarData, user } = useAuth()
   const { num } = useParams()
   const sheetName = `W${num}`
 
@@ -22,6 +23,10 @@ const Week = () => {
   const [selectedPemesan, setSelectedPemesan] = useState(null)
   const [loading, setLoading] = useState(false)
   const [selectedWeek, setSelectedWeek] = useState(null)
+  const [fixModalOpen, setFixModalOpen] = useState(false)
+  const [missingEntries, setMissingEntries] = useState([])
+  const [selectedFixIds, setSelectedFixIds] = useState(new Set())
+  const [expandedPemesan, setExpandedPemesan] = useState(null)
 
   const isAllWeek = !num
   const allWeekEntries = isAllWeek
@@ -154,16 +159,41 @@ const Week = () => {
         if (actualIndex !== -1) {
           updated[actualIndex] = entry
           await saveWeekData(sheetName, updated)
+          await logWeekAction({
+            user,
+            action: 'edit',
+            sheetName,
+            entryBefore: data[actualIndex],
+            entryAfter: entry,
+            description: `Edited entry in ${sheetName}`
+          })
           Swal.fire('Berhasil', 'Data diperbarui', 'success')
         } else {
           updated.push(entry)
           await saveWeekData(sheetName, updated)
+          await logWeekAction({
+            user,
+            action: 'add',
+            sheetName,
+            entryBefore: null,
+            entryAfter: entry,
+            description: `Added entry in ${sheetName}`
+          })
           Swal.fire('Berhasil', 'Data ditambahkan', 'success')
         }
       } else {
         updated.push(entry)
         await saveWeekData(sheetName, updated)
         Swal.fire('Berhasil', 'Data ditambahkan', 'success')
+
+        await logWeekAction({
+          user,
+          action: 'add',
+          sheetName,
+          entryBefore: null,
+          entryAfter: entry,
+          description: `Added entry in ${sheetName}`
+        })
       }
 
       setData(updated)
@@ -223,6 +253,14 @@ const Week = () => {
       const updated = [...data]
       updated.splice(actualIndex, 1)
       await saveWeekData(sheetName, updated)
+      await logWeekAction({
+        user,
+        action: 'delete',
+        sheetName,
+        entryBefore: selected,
+        entryAfter: null,
+        description: `Deleted entry in ${sheetName}`
+      })
       setData(updated)
       Swal.fire('Dihapus!', 'Data berhasil dihapus.', 'success')
     } catch (error) {
@@ -232,6 +270,133 @@ const Week = () => {
       setLoading(false)
     }
   }
+
+  const toggleFixSelection = id => {
+    setSelectedFixIds(prev => {
+      const newSet = new Set(prev)
+      newSet.has(id) ? newSet.delete(id) : newSet.add(id)
+      return newSet
+    })
+  }
+
+  const handleCheckMissingEntries = async () => {
+    try {
+      Swal.fire({
+        title: 'Memeriksa data...',
+        text: 'Mohon tunggu sebentar',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading()
+        }
+      })
+
+      let existing = []
+      let weekKey = sheetName
+
+      if (isAllWeek) {
+        if (!selectedWeek) {
+          Swal.close()
+          Swal.fire('Pilih minggu dulu', 'Kalau cek semua minggu, harus pilih minggu yang mana dulu.', 'warning')
+          return
+        }
+        weekKey = selectedWeek.value
+        existing = weekData[weekKey] || []
+      } else {
+        existing = weekData[weekKey] || []
+      }
+
+      const existingKeys = new Set(existing.map(e => `${e.pemesan}|${e.produkLabel}|${e.jumlah}`))
+
+      const { data: logs, error } = await supabase
+        .from('week_logs')
+        .select('*')
+        .in('action', ['add', 'delete'])
+        .eq('target', 'week_entry')
+        .like('target_id', `${weekKey}|%`)
+        .order('timestamp', { ascending: false })
+
+      if (error) throw error
+
+      const seen = new Set()
+      const deletedKeys = new Set()
+      const found = []
+
+      for (const log of logs) {
+        if (log.action === 'delete') {
+          const before = log.data_before ? JSON.parse(log.data_before) : null
+          if (!before) continue
+          const key = `${before.pemesan}|${before.produkLabel}|${before.jumlah}`
+          deletedKeys.add(key)
+        } else if (log.action === 'add') {
+          const after = log.data_after ? JSON.parse(log.data_after) : null
+          if (!after) continue
+          const key = `${after.pemesan}|${after.produkLabel}|${after.jumlah}`
+          if (!existingKeys.has(key) && !seen.has(key)) {
+            found.push({
+              ...after,
+              id: log.id,
+              week: weekKey,
+              _deleted: deletedKeys.has(key)
+            })
+            seen.add(key)
+          }
+        }
+      }
+
+      Swal.close()
+
+      const autoChecked = found.filter(e => !e._deleted).map(e => e.id)
+
+      setMissingEntries(found)
+      setSelectedFixIds(new Set(autoChecked))
+      setFixModalOpen(true)
+    } catch (err) {
+      Swal.close()
+      Swal.fire('Error', err.message, 'error')
+    }
+  }
+
+  const groupedMissing = missingEntries.reduce((acc, e) => {
+    if (!acc[e.pemesan]) acc[e.pemesan] = []
+    acc[e.pemesan].push(e)
+    return acc
+  }, {})
+
+  const handleRestoreMissingEntries = async () => {
+    try {
+      const selected = missingEntries.filter(e => selectedFixIds.has(e.id))
+      if (!selected.length) return
+
+      const grouped = selected.reduce((acc, e) => {
+        const wk = e.week || sheetName
+        acc[wk] = acc[wk] || []
+        acc[wk].push(e)
+        return acc
+      }, {})
+
+      for (const [wk, entries] of Object.entries(grouped)) {
+        const updated = [...(weekData[wk] || []), ...entries]
+        await saveWeekData(wk, updated)
+
+        for (const e of entries) {
+          await logWeekAction({
+            user,
+            action: 'restore',
+            sheetName: wk,
+            entryBefore: null,
+            entryAfter: e,
+            description: `Restored missing entry in ${wk}`
+          })
+        }
+      }
+
+      Swal.fire('Berhasil', 'Data berhasil dipulihkan', 'success')
+      setFixModalOpen(false)
+    } catch (err) {
+      Swal.fire('Error', 'Gagal memulihkan data', 'error')
+    }
+  }
+
 
   const columns = [
     { name: 'No', selector: (r, i) => i + 1, width: '60px', wrap: true },
@@ -303,6 +468,9 @@ const Week = () => {
           <h4>{isAllWeek ? 'Semua Minggu' : `Minggu ${num}`}</h4>
         </Col>
         <Col xs="12" md="6" className="text-end mt-2 mt-md-0">
+          <Button color="info" onClick={handleCheckMissingEntries} disabled={loading} className="me-3">
+            🔍 Cek Data Minggu Hilang
+          </Button>
           <Button color="warning" onClick={() => window.history.back()}>
             Kembali
           </Button>
@@ -442,6 +610,101 @@ const Week = () => {
           progressPending={loading}
         />
       </div>
+
+      <Modal isOpen={fixModalOpen} toggle={() => setFixModalOpen(!fixModalOpen)} size="lg">
+        <ModalHeader toggle={() => setFixModalOpen(false)}>
+          Data Hilang {isAllWeek ? (selectedWeek?.value || 'Pilih minggu') : sheetName}
+        </ModalHeader>
+
+        <ModalBody>
+          {missingEntries.length === 0 ? (
+            <Alert color="success">Tidak ada data yang hilang</Alert>
+          ) : (
+            <>
+              <p>
+                Ditemukan <strong>{missingEntries.length}</strong> data pesanan yang belum tercatat:
+              </p>
+              <ul className="list-unstyled">
+                {Object.entries(groupedMissing).map(([pemesan, entries]) => {
+                  const allChecked = entries.every(e => selectedFixIds.has(e.id))
+                  const someChecked = entries.some(e => selectedFixIds.has(e.id)) && !allChecked
+                  const totalPemesan = entries.filter(ent => selectedFixIds.has(ent.id)).reduce((sum, ent) => sum + Number(ent.bayar || 0), 0)
+                  const isExpanded = expandedPemesan === pemesan
+
+                  return (
+                    <li key={pemesan} className="mb-3 border rounded p-2 bg-light">
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div>
+                          <Input
+                            type="checkbox"
+                            checked={allChecked}
+                            ref={el => {
+                              if (el) el.indeterminate = someChecked
+                            }}
+                            onChange={e => {
+                              const copy = new Set(selectedFixIds)
+                              if (e.target.checked) {
+                                entries.forEach(ent => copy.add(ent.id))
+                              } else {
+                                entries.forEach(ent => copy.delete(ent.id))
+                              }
+                              setSelectedFixIds(copy)
+                            }}
+                            className="me-2"
+                          />
+                          <b>{pemesan}</b>
+                          <span className="ms-2 text-muted">Total Rp{totalPemesan.toLocaleString('id-ID')}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          color="link"
+                          onClick={() => setExpandedPemesan(isExpanded ? null : pemesan)}
+                        >
+                          {isExpanded ? '▲ Sembunyikan' : '▼ Lihat Produk'}
+                        </Button>
+                      </div>
+
+                      {isExpanded && (
+                        <ul className="mt-2">
+                          {entries.map(ent => (
+                            <li
+                              key={ent.id}
+                              className="d-flex align-items-center justify-content-between border-bottom py-1"
+                            >
+                              <div>
+                                <Input
+                                  type="checkbox"
+                                  checked={selectedFixIds.has(ent.id)}
+                                  onChange={() => toggleFixSelection(ent.id)}
+                                  className="me-2"
+                                />
+                                {ent.produkLabel} <small>({ent.jumlah}x)</small>
+                                {ent._deleted && <span className="badge bg-danger ms-2">dihapus</span>}
+                              </div>
+                              <div>
+                                <small className="text-muted">
+                                  Rp{Number(ent.bayar || 0).toLocaleString('id-ID')}
+                                </small>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
+        </ModalBody>
+
+        <ModalFooter>
+          {missingEntries.length > 0 && (
+            <Button color="primary" onClick={handleRestoreMissingEntries}>Pulihkan</Button>
+          )}
+          <Button color="secondary" onClick={() => setFixModalOpen(false)}>Tutup</Button>
+        </ModalFooter>
+      </Modal>
     </div>
   )
 }
