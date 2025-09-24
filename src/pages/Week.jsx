@@ -21,13 +21,14 @@ const Week = () => {
   const [searchText, setSearchText] = useState('')
   const [selectedPemesan, setSelectedPemesan] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [selectedWeek, setSelectedWeek] = useState(null)
 
   const isAllWeek = !num
   const allWeekEntries = isAllWeek
     ? Object.keys(weekData)
       .filter(k => /^W\d+/.test(k))
-      .flatMap(k => weekData[k] || [])
-    : []
+      .flatMap(k => (weekData[k] || []).map(d => ({ ...d, week: k })))
+  : []
 
   const uniquePemesanThisWeek = !isAllWeek ? [...new Set((weekData[sheetName] || []).map(d => d.pemesan))].sort((a, b) => a.localeCompare(b)) : []
 
@@ -234,6 +235,7 @@ const Week = () => {
 
   const columns = [
     { name: 'No', selector: (r, i) => i + 1, width: '60px', wrap: true },
+    ...(isAllWeek ? [{ name: 'Minggu', selector: r => r.week, wrap: true }] : []),
     { name: 'Pemesan', selector: r => r.pemesan, wrap: true },
     { name: 'Produk', selector: r => r.produkLabel, wrap: true },
     { name: 'Catatan', selector: r => r.catatan || "-", wrap: true },
@@ -279,13 +281,20 @@ const Week = () => {
       String(val).toLowerCase().includes(searchText.toLowerCase())
     )
     const matchPemesan = selectedPemesan ? row.pemesan === selectedPemesan.value : true
-    return matchSearch && matchPemesan
+    const matchWeek = selectedWeek ? row.week === selectedWeek.value : true
+    return matchSearch && matchPemesan && matchWeek
   })
 
   const uniquePemesanOptions = [...new Set(data.map(d => d.pemesan))].map(p => ({
     label: p,
     value: p
   }))
+
+  const uniqueWeekOptions = isAllWeek
+  ? [...new Set(data.map(d => d.week))]
+      .sort((a, b) => Number(a.replace('W', '')) - Number(b.replace('W', '')))
+      .map(w => ({ label: w, value: w }))
+  : []
 
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
@@ -374,7 +383,7 @@ const Week = () => {
           </Col>
         </Row>
         <Row className="mb-3">
-          <Col xs="12" md="4" className="mb-2 mb-md-0">
+          <Col xs="12" md={isAllWeek ? "3" : "4"} className="mb-2 mb-md-0">
             <Input
               placeholder="🔍 Cari apa aja..."
               value={searchText}
@@ -382,7 +391,7 @@ const Week = () => {
               disabled={loading}
             />
           </Col>
-          <Col xs="12" md="4" className="mb-2 mb-md-0">
+          <Col xs="12" md={isAllWeek ? "3" : "4"} className="mb-2 mb-md-0">
             <Select
               options={uniquePemesanOptions}
               isClearable
@@ -393,10 +402,24 @@ const Week = () => {
               isDisabled={loading}
             />
           </Col>
-          <Col xs="12" md="4" className="text-end">
+          {isAllWeek && (
+            <Col xs="12" md="3" className="mb-2 mb-md-0">
+              <Select
+                options={uniqueWeekOptions}
+                isClearable
+                isSearchable
+                placeholder="🔽 Filter minggu"
+                value={selectedWeek}
+                onChange={setSelectedWeek}
+                isDisabled={loading}
+              />
+            </Col>
+          )}
+          <Col xs="12" md={isAllWeek ? "3" : "4"} className="text-end">
             <Button color="danger" className="me-3 mb-2 mb-md-0" onClick={() => {
               setSearchText('')
               setSelectedPemesan(null)
+              setSelectedWeek(null)
             }} disabled={loading}>
               Reset Filter
             </Button>
