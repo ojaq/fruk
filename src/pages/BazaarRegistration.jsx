@@ -830,7 +830,7 @@ const BazaarRegistration = () => {
                   }))
                 }
               }}
-              disabled={loading}
+              disabled={loading || onlineFull || offlineFull}
             >
               Gunakan Produk dari Bazaar Terakhir
             </Button>
