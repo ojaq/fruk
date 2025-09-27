@@ -195,8 +195,8 @@ const BazaarRegistration = () => {
         return
       }
 
-      const maxSuppliersOnline = announcement.maxSuppliersOnline || 70
-      const maxSuppliersOffline = announcement.maxSuppliersOffline || 40
+      const maxSuppliersOnline = announcement.maxSuppliersOnline ?? 70
+      const maxSuppliersOffline = announcement.maxSuppliersOffline ?? 40
       const maxProducts = announcement.maxProductsPerSupplier || 3
       let baseProductSetOnline = new Set()
       let baseProductSetOffline = new Set()
@@ -516,12 +516,30 @@ const BazaarRegistration = () => {
   }))
 
   const currentAnnouncement = selectedAnnouncement || announcements.find(a => a.id === form.announcementId)
-  const maxSuppliersOnline = currentAnnouncement?.maxSuppliersOnline || 70
-  const maxSuppliersOffline = currentAnnouncement?.maxSuppliersOffline || 40
+  const maxSuppliersOnline = currentAnnouncement?.maxSuppliersOnline ?? 70
+  const maxSuppliersOffline = currentAnnouncement?.maxSuppliersOffline ?? 40
   const maxProducts = currentAnnouncement?.maxProductsPerSupplier || 3
   const baseProducts = form.selectedProducts.map(p => getDynamicBaseProduct(p.label, form.selectedProducts.map(x => x.label)))
   const uniqueBaseProducts = Array.from(new Set(baseProducts))
   const isAtMaxProducts = uniqueBaseProducts.length >= maxProducts
+
+  const activeRegs = registrations.filter(r => r.announcementId === currentAnnouncement?.id && ['pending','approved'].includes(r.status))
+
+  const onlineSuppliers = new Set(activeRegs.filter(r => r.participateOnline).map(r => r.supplierName))
+  const offlineSuppliers = new Set(activeRegs.filter(r => r.participateOffline).map(r => r.supplierName))
+
+  const onlineFull = onlineSuppliers.size >= maxSuppliersOnline
+  const offlineFull = offlineSuppliers.size >= maxSuppliersOffline
+
+  useEffect(() => {
+    if (!modalOpen) return
+    if (onlineFull && form.participateOnline) {
+      setForm(f => ({ ...f, participateOnline: false }))
+    }
+    if (offlineFull && form.participateOffline) {
+      setForm(f => ({ ...f, participateOffline: false }))
+    }
+  }, [modalOpen, onlineFull, offlineFull])
 
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
@@ -605,13 +623,19 @@ const BazaarRegistration = () => {
             </Row>
 
             <Row>
+              {(onlineFull || offlineFull) && (
+                <Alert color="danger" className="mb-3">
+                  {onlineFull && <div>❌ Kuota supplier <b>Online</b> sudah penuh ({maxSuppliersOnline}).</div>}
+                  {offlineFull && <div>❌ Kuota supplier <b>Offline</b> sudah penuh ({maxSuppliersOffline}).</div>}
+                </Alert>
+              )}
               <Col xs="12" md="6" className="mb-3">
                 <FormGroup check>
                   <Input
                     type="checkbox"
                     checked={form.participateOnline}
                     onChange={e => setForm({ ...form, participateOnline: e.target.checked })}
-                    disabled={loading}
+                    disabled={loading || onlineFull}
                   />
                   <Label check>
                     Ikut Bazaar Online
@@ -624,7 +648,7 @@ const BazaarRegistration = () => {
                     type="checkbox"
                     checked={form.participateOffline}
                     onChange={e => setForm({ ...form, participateOffline: e.target.checked })}
-                    disabled={loading}
+                    disabled={loading || offlineFull}
                   />
                   <Label check>
                     Ikut Bazaar Offline
@@ -640,7 +664,7 @@ const BazaarRegistration = () => {
                     type="checkbox"
                     checked={separateProducts}
                     onChange={e => setSeparateProducts(e.target.checked)}
-                    disabled={loading}
+                    disabled={loading || onlineFull || offlineFull}
                   />
                   <Label check>
                     Produk untuk Bazaar Online dan Offline Berbeda
@@ -664,7 +688,7 @@ const BazaarRegistration = () => {
                         }
                       }}
                       placeholder={`Pilih produk untuk bazaar online (maks ${maxProducts} jenis produk, maksimal ${maxSuppliersOnline} supplier)`}
-                      isDisabled={loading || !form.participateOnline}
+                      isDisabled={loading || !form.participateOnline || onlineFull || offlineFull}
                     />
                     {(() => {
                       const jenisSet = new Set(form.selectedProductsOnline.map(p => p.data.jenisProduk))
@@ -700,7 +724,7 @@ const BazaarRegistration = () => {
                         }
                       }}
                       placeholder={`Pilih produk untuk bazaar offline (maks ${maxProducts} produk utama, maksimal ${maxSuppliersOffline} supplier)`}
-                      isDisabled={loading || !form.participateOffline}
+                      isDisabled={loading || !form.participateOffline || onlineFull || offlineFull}
                     />
                     {(() => {
                       const baseProductsOffline = form.selectedProductsOffline.map(p => getDynamicBaseProduct(p.label, form.selectedProductsOffline.map(x => x.label)))
@@ -739,7 +763,7 @@ const BazaarRegistration = () => {
                       }
                     }}
                     placeholder={`Pilih produk yang akan dijual di bazaar ini (maks ${maxProducts} jenis produk, maksimal ${Math.max(maxSuppliersOnline, maxSuppliersOffline)} supplier)`}
-                    isDisabled={loading}
+                    isDisabled={loading || onlineFull || offlineFull}
                   />
                   <small className={`${new Set(form.selectedProducts.map(p => p.data.jenisProduk)).size >= maxProducts ? 'text-danger' : 'text-muted'}`}>
                     Pilih produk yang akan Anda jual di bazaar ini (maks {maxProducts} jenis produk)
