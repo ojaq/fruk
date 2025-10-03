@@ -42,6 +42,13 @@ const Register = () => {
     <Container className="d-flex justify-content-center align-items-center vh-100">
       <Row>
         <Col>
+          <div className="d-flex justify-content-center">
+            <img 
+              src="./logo.jpeg" 
+              alt="logo"
+              style={{ height: '200px', width: 'auto', marginBottom: '-30px' }}
+            />
+          </div>
           <Card style={{ minWidth: 350 }}>
             <CardBody>
               <CardTitle tag="h3" className="mb-4 text-center">Register</CardTitle>

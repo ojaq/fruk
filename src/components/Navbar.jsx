@@ -94,8 +94,13 @@ const NavbarComponent = () => {
   return (
     <>
       <Navbar color="light" light expand="md" className="px-4 shadow-sm justify-content-between">
-        <NavbarBrand onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
-          🛍️ FRUK
+        <NavbarBrand onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          <img
+            src="./logo.png"
+            alt="FRUK Logo"
+            style={{ height: "40px", width: "auto", marginRight: "8px" }}
+          />
+          <span>FRUK</span>
         </NavbarBrand>
 
         <Nav navbar className="ms-auto">
