@@ -8,6 +8,7 @@ import { logBazaarAction } from '../context/AuthContext'
 import Select from 'react-select'
 import moment from 'moment'
 import 'moment/locale/id'
+import { supabase } from '../supabaseClient'
 moment.locale('id')
 
 const MONTHS_ID = [
@@ -237,6 +238,37 @@ const BazaarRegistration = () => {
         return
       }
 
+      let updated = [...registrations]
+
+      if (!editId) {
+        const { data: freshData, error: fetchErr } = await supabase
+          .from('bazaar_data')
+          .select('*')
+          .single()
+
+        if (fetchErr) throw fetchErr
+        const latest = freshData?.data || freshData
+
+        const latestRegs = latest.registrations || []
+        const activeRegs = latestRegs.filter(
+          r => r.announcementId === announcementId && ['pending', 'approved'].includes(r.status)
+        )
+
+        const onlineSuppliers = new Set(activeRegs.filter(r => r.participateOnline).map(r => r.supplierName))
+        const offlineSuppliers = new Set(activeRegs.filter(r => r.participateOffline).map(r => r.supplierName))
+
+        const onlineFull = onlineSuppliers.size >= maxSuppliersOnline
+        const offlineFull = offlineSuppliers.size >= maxSuppliersOffline
+
+        if ((onlineFull && participateOnline) || (offlineFull && participateOffline)) {
+          Swal.fire('Penuh', 'Kuota bazaar sudah penuh, silakan pilih mode lain.', 'warning')
+          setLoading(false)
+          return
+        }
+
+        updated = [...latestRegs]
+      }
+
       const newRegistration = {
         id: editId ? editId : Date.now().toString(),
         announcementId,
@@ -252,7 +284,6 @@ const BazaarRegistration = () => {
         selectedProductsOffline: separateProducts ? selectedProductsOffline : []
       }
 
-      let updated = [...registrations]
       let isNew = false
       let previousRegistration = null
       if (editId) {
@@ -339,6 +370,14 @@ const BazaarRegistration = () => {
       (Array.isArray(row.selectedProductsOnline) && row.selectedProductsOnline.length > 0) ||
       (Array.isArray(row.selectedProductsOffline) && row.selectedProductsOffline.length > 0)
     )
+
+    setTimeout(() => {
+      setForm(f => ({
+        ...f,
+        participateOnline: row.participateOnline,
+        participateOffline: row.participateOffline
+      }))
+    }, 0)
   }
 
   const handleView = (row) => {
@@ -346,23 +385,39 @@ const BazaarRegistration = () => {
     setViewModalOpen(true)
   }
 
-  const handleAdd = () => {
-    setForm({
-      announcementId: '',
-      supplierName: getSupplierName(user),
-      participateOnline: false,
-      participateOffline: false,
-      selectedProducts: [],
-      selectedProductsOnline: [],
-      selectedProductsOffline: [],
-      notes: '',
-      status: 'pending'
-    })
-    setSelectedAnnouncement(null)
-    setEditIndex(null)
-    setEditId(null)
-    setModalOpen(true)
-    setSeparateProducts(false)
+  const handleAdd = async () => {
+    setLoading(true)
+    try {
+      const { data: refreshed } = await supabase
+        .from('bazaar_data')
+        .select('*')
+        .single()
+
+      if (refreshed) {
+        saveBazaarData(refreshed)
+      }
+
+      setForm({
+        announcementId: '',
+        supplierName: getSupplierName(user),
+        participateOnline: false,
+        participateOffline: false,
+        selectedProducts: [],
+        selectedProductsOnline: [],
+        selectedProductsOffline: [],
+        notes: '',
+        status: 'pending'
+      })
+      setSelectedAnnouncement(null)
+      setEditIndex(null)
+      setEditId(null)
+      setModalOpen(true)
+      setSeparateProducts(false)
+    } catch (err) {
+      console.error('error refreshing bazaar data:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleDelete = async (index) => {
@@ -531,15 +586,15 @@ const BazaarRegistration = () => {
   const onlineFull = onlineSuppliers.size >= maxSuppliersOnline
   const offlineFull = offlineSuppliers.size >= maxSuppliersOffline
 
-  useEffect(() => {
-    if (!modalOpen) return
-    if (onlineFull && form.participateOnline) {
-      setForm(f => ({ ...f, participateOnline: false }))
-    }
-    if (offlineFull && form.participateOffline) {
-      setForm(f => ({ ...f, participateOffline: false }))
-    }
-  }, [modalOpen, onlineFull, offlineFull])
+  // useEffect(() => {
+  //   if (!modalOpen) return
+  //   if (onlineFull && form.participateOnline) {
+  //     setForm(f => ({ ...f, participateOnline: false }))
+  //   }
+  //   if (offlineFull && form.participateOffline) {
+  //     setForm(f => ({ ...f, participateOffline: false }))
+  //   }
+  // }, [modalOpen, onlineFull, offlineFull])
 
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
@@ -635,7 +690,7 @@ const BazaarRegistration = () => {
                     type="checkbox"
                     checked={form.participateOnline}
                     onChange={e => setForm({ ...form, participateOnline: e.target.checked })}
-                    disabled={loading || onlineFull}
+                    disabled={loading || (onlineFull && !form.participateOnline)}
                   />
                   <Label check>
                     Ikut Bazaar Online
@@ -648,7 +703,7 @@ const BazaarRegistration = () => {
                     type="checkbox"
                     checked={form.participateOffline}
                     onChange={e => setForm({ ...form, participateOffline: e.target.checked })}
-                    disabled={loading || offlineFull}
+                    disabled={loading || (offlineFull && !form.participateOffline)}
                   />
                   <Label check>
                     Ikut Bazaar Offline
@@ -688,7 +743,7 @@ const BazaarRegistration = () => {
                         }
                       }}
                       placeholder={`Pilih produk untuk bazaar online (maks ${maxProducts} jenis produk, maksimal ${maxSuppliersOnline} supplier)`}
-                      isDisabled={loading || !form.participateOnline || onlineFull || offlineFull}
+                      isDisabled={loading || !form.participateOnline || (onlineFull && !form.participateOnline)}
                     />
                     {(() => {
                       const jenisSet = new Set(form.selectedProductsOnline.map(p => p.data.jenisProduk))
@@ -724,7 +779,7 @@ const BazaarRegistration = () => {
                         }
                       }}
                       placeholder={`Pilih produk untuk bazaar offline (maks ${maxProducts} produk utama, maksimal ${maxSuppliersOffline} supplier)`}
-                      isDisabled={loading || !form.participateOffline || onlineFull || offlineFull}
+                      isDisabled={loading || !form.participateOnline || (onlineFull && !form.participateOnline)}
                     />
                     {(() => {
                       const baseProductsOffline = form.selectedProductsOffline.map(p => getDynamicBaseProduct(p.label, form.selectedProductsOffline.map(x => x.label)))
@@ -763,7 +818,7 @@ const BazaarRegistration = () => {
                       }
                     }}
                     placeholder={`Pilih produk yang akan dijual di bazaar ini (maks ${maxProducts} jenis produk, maksimal ${Math.max(maxSuppliersOnline, maxSuppliersOffline)} supplier)`}
-                    isDisabled={loading || onlineFull || offlineFull}
+                    isDisabled={loading || !form.participateOnline || (onlineFull && !form.participateOnline)}
                   />
                   <small className={`${new Set(form.selectedProducts.map(p => p.data.jenisProduk)).size >= maxProducts ? 'text-danger' : 'text-muted'}`}>
                     Pilih produk yang akan Anda jual di bazaar ini (maks {maxProducts} jenis produk)

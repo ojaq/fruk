@@ -95,14 +95,20 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await supabase
         .from('bazaar_data')
         .select('*')
+        .eq('id', 1)
+        .single()
 
       if (error) {
         console.error('Error fetching bazaar data:', error)
         return
       }
 
-      if (data && data.length > 0) {
-        setBazaarData(data[0].data || {})
+      if (data) {
+        let clean = data
+        while (clean?.data && clean.data.id && clean.data.data) {
+          clean = clean.data
+        }
+        setBazaarData(clean?.data || clean)
       } else {
         setBazaarData({})
       }
@@ -264,16 +270,13 @@ export const AuthProvider = ({ children }) => {
 
   const saveBazaarData = async (newBazaarData) => {
     try {
+      const cleanData = newBazaarData?.data ? newBazaarData.data : newBazaarData
+
       const { error } = await supabase
         .from('bazaar_data')
-        .upsert([{ id: 1, data: newBazaarData }])
+        .upsert([{ id: 1, data: cleanData }])
 
-      if (error) {
-        console.error('Error saving bazaar data:', error)
-        Swal.fire('Error', 'Gagal menyimpan data bazaar', 'error')
-        return
-      }
-
+      if (error) throw error
       await fetchBazaarData()
     } catch (error) {
       console.error('Error saving bazaar data:', error)
