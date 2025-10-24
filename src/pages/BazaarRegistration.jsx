@@ -779,7 +779,7 @@ const BazaarRegistration = () => {
                         }
                       }}
                       placeholder={`Pilih produk untuk bazaar offline (maks ${maxProducts} produk utama, maksimal ${maxSuppliersOffline} supplier)`}
-                      isDisabled={loading || !form.participateOnline || (onlineFull && !form.participateOnline)}
+                      isDisabled={loading || !form.participateOffline || (offlineFull && !form.participateOffline)}
                     />
                     {(() => {
                       const baseProductsOffline = form.selectedProductsOffline.map(p => getDynamicBaseProduct(p.label, form.selectedProductsOffline.map(x => x.label)))
@@ -818,7 +818,11 @@ const BazaarRegistration = () => {
                       }
                     }}
                     placeholder={`Pilih produk yang akan dijual di bazaar ini (maks ${maxProducts} jenis produk, maksimal ${Math.max(maxSuppliersOnline, maxSuppliersOffline)} supplier)`}
-                    isDisabled={loading || !form.participateOnline || (onlineFull && !form.participateOnline)}
+                    isDisabled={
+                      loading ||
+                      (!form.participateOnline && !form.participateOffline) ||
+                      ((onlineFull && !form.participateOnline) && (offlineFull && !form.participateOffline))
+                    }
                   />
                   <small className={`${new Set(form.selectedProducts.map(p => p.data.jenisProduk)).size >= maxProducts ? 'text-danger' : 'text-muted'}`}>
                     Pilih produk yang akan Anda jual di bazaar ini (maks {maxProducts} jenis produk)
