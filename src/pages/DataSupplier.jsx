@@ -401,10 +401,10 @@ const DataSupplier = () => {
                 <Button type="submit" color="primary" className="me-2" disabled={loading} onClick={handleAdd}>
                   Tambah Produk
                 </Button>
-                <Button color="success" className="me-2" onClick={() => toggleAllAktif(true)} disabled={loading}>
+                <Button color="success" className="me-2" onClick={() => toggleAllAktif(true)} disabled={loading || (filteredData == 0)}>
                   Aktifkan Semua
                 </Button>
-                <Button color="danger" className="me-2" onClick={() => toggleAllAktif(false)} disabled={loading}>
+                <Button color="danger" className="me-2" onClick={() => toggleAllAktif(false)} disabled={loading || (filteredData == 0)}>
                   Nonaktifkan Semua
                 </Button>
               </>

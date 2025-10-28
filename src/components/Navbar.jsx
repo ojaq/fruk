@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Swal from 'sweetalert2'
 import { supabase } from '../supabaseClient'
+import logo from '/logo.png'
 
 const NavbarComponent = () => {
   const { user, logout, profile, saveProfile, registeredUsers, profileModalOpen, toggleProfileModal } = useAuth()
@@ -96,8 +97,8 @@ const NavbarComponent = () => {
       <Navbar color="light" light expand="md" className="px-4 shadow-sm justify-content-between">
         <NavbarBrand onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
           <img
-            src="./logo.png"
-            alt="FRUK Logo"
+            src={logo}
+            alt="logo"
             style={{ height: "40px", width: "auto", marginRight: "8px" }}
           />
           <span>FRUK</span>

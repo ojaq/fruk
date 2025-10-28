@@ -237,8 +237,7 @@ const BazaarAnnouncement = () => {
     setModalOpen(true)
   }
 
-  const handleDelete = async (index) => {
-    const row = announcements[index]
+  const handleDelete = async (row) => {
     const result = await Swal.fire({
       title: `Hapus pengumuman "${row.title}"?`,
       text: 'Pengumuman ini akan dihapus secara permanen.',
@@ -252,13 +251,7 @@ const BazaarAnnouncement = () => {
 
     setLoading(true)
     try {
-      const actualIndex = announcements.findIndex(a => a.id === row.id)
-      if (actualIndex === -1) {
-        Swal.fire('Error', 'Data tidak ditemukan', 'error')
-        return
-      }
-      const updated = [...announcements]
-      updated.splice(actualIndex, 1)
+      const updated = announcements.filter(a => a.id !== row.id)
       await saveBazaarData({ ...bazaarData, announcements: updated })
       Swal.fire('Dihapus!', 'Pengumuman berhasil dihapus.', 'success')
     } catch (error) {
@@ -329,7 +322,7 @@ const BazaarAnnouncement = () => {
           <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
             <Edit size={16} />
           </Button>
-          <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
+          <Button size="sm" color="danger" onClick={() => handleDelete(row)} disabled={loading}>
             <Trash2 size={16} />
           </Button>
         </>
