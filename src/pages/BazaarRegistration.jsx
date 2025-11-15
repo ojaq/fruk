@@ -596,6 +596,17 @@ const BazaarRegistration = () => {
   //   }
   // }, [modalOpen, onlineFull, offlineFull])
 
+  useEffect(() => {
+    if (
+      loading ||
+      !form.announcementId ||
+      onlineFull ||
+      offlineFull
+    ) {
+      setSeparateProducts(false)
+    }
+  }, [loading, form.announcementId, onlineFull, offlineFull])
+
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">
       <Row className="mb-3">
@@ -689,7 +700,10 @@ const BazaarRegistration = () => {
                   <Input
                     type="checkbox"
                     checked={form.participateOnline}
-                    onChange={e => setForm({ ...form, participateOnline: e.target.checked })}
+                    onChange={e => {
+                      if (onlineFull && e.target.checked) return
+                      setForm({ ...form, participateOnline: e.target.checked })
+                    }}
                     disabled={loading || (onlineFull && !form.participateOnline)}
                   />
                   <Label check>
@@ -702,7 +716,10 @@ const BazaarRegistration = () => {
                   <Input
                     type="checkbox"
                     checked={form.participateOffline}
-                    onChange={e => setForm({ ...form, participateOffline: e.target.checked })}
+                    onChange={e => {
+                      if (offlineFull && e.target.checked) return
+                      setForm({ ...form, participateOffline: e.target.checked })
+                    }}
                     disabled={loading || (offlineFull && !form.participateOffline)}
                   />
                   <Label check>
@@ -719,7 +736,12 @@ const BazaarRegistration = () => {
                     type="checkbox"
                     checked={separateProducts}
                     onChange={e => setSeparateProducts(e.target.checked)}
-                    disabled={loading || onlineFull || offlineFull}
+                    disabled={
+                      loading ||
+                      !form.announcementId ||
+                      onlineFull ||
+                      offlineFull
+                    }
                   />
                   <Label check>
                     Produk untuk Bazaar Online dan Offline Berbeda
@@ -868,28 +890,82 @@ const BazaarRegistration = () => {
             <Button
               color="warning"
               onClick={() => {
-                if (
-                  (Array.isArray(lastRegistration.selectedProductsOnline) && lastRegistration.selectedProductsOnline.length > 0) ||
-                  (Array.isArray(lastRegistration.selectedProductsOffline) && lastRegistration.selectedProductsOffline.length > 0)
-                ) {
-                  setSeparateProducts(true)
-                  setForm(f => ({
-                    ...f,
-                    selectedProducts: [],
-                    selectedProductsOnline: lastRegistration.selectedProductsOnline || [],
-                    selectedProductsOffline: lastRegistration.selectedProductsOffline || []
-                  }))
+                if (!form.announcementId) {
+                  Swal.fire('Pilih Bazaar', 'Pilih bazaar dulu sebelum menggunakan data sebelumnya.', 'warning')
+                  return
+                }
+
+                const ann = announcements.find(a => a.id === form.announcementId)
+                const maxOn = ann?.maxSuppliersOnline ?? 70
+                const maxOff = ann?.maxSuppliersOffline ?? 40
+
+                const regs = registrations.filter(
+                  r => r.announcementId === ann.id && ['pending','approved'].includes(r.status)
+                )
+
+                const onlineFullCurrent = regs.filter(r => r.participateOnline).length >= maxOn
+                const offlineFullCurrent = regs.filter(r => r.participateOffline).length >= maxOff
+
+                const last = lastRegistration
+                if (!last) return
+
+                const lastHasSeparate =
+                  (last.selectedProductsOnline?.length || 0) > 0 ||
+                  (last.selectedProductsOffline?.length || 0) > 0
+
+                const allowOnline = last.participateOnline && !onlineFullCurrent
+                const allowOffline = last.participateOffline && !offlineFullCurrent
+
+                let selectedProducts = []
+                let selectedProductsOnline = []
+                let selectedProductsOffline = []
+
+                // ---- REAL FIX ----
+                if (lastHasSeparate) {
+                  if (allowOnline && allowOffline) {
+                    // both allowed → keep separate
+                    selectedProductsOnline = last.selectedProductsOnline || []
+                    selectedProductsOffline = last.selectedProductsOffline || []
+                    selectedProducts = []
+                  } else if (allowOnline && !allowOffline) {
+                    // only online allowed → move online products → selectedProducts
+                    selectedProducts = last.selectedProductsOnline || []
+                  } else if (!allowOnline && allowOffline) {
+                    // only offline allowed → move offline products → selectedProducts
+                    selectedProducts = last.selectedProductsOffline || []
+                  } else {
+                    // none allowed
+                    selectedProducts = []
+                  }
                 } else {
-                  setSeparateProducts(false)
-                  setForm(f => ({
-                    ...f,
-                    selectedProducts: lastRegistration.selectedProducts || [],
-                    selectedProductsOnline: [],
-                    selectedProductsOffline: []
-                  }))
+                  // last was non-separate
+                  if (allowOnline || allowOffline) {
+                    selectedProducts = last.selectedProducts || []
+                  }
+                }
+
+                // set form
+                setForm(f => ({
+                  ...f,
+                  participateOnline: allowOnline,
+                  participateOffline: allowOffline,
+                  selectedProducts,
+                  selectedProductsOnline,
+                  selectedProductsOffline
+                }))
+
+                // update separateProducts
+                setSeparateProducts(allowOnline && allowOffline && lastHasSeparate)
+
+                if (!allowOnline || !allowOffline) {
+                  Swal.fire(
+                    'Beberapa mode tidak bisa digunakan',
+                    `${!allowOnline ? 'Online penuh.\n' : ''}${!allowOffline ? 'Offline penuh.' : ''}`,
+                    'info'
+                  )
                 }
               }}
-              disabled={loading || onlineFull || offlineFull}
+              disabled={loading}
             >
               Gunakan Produk dari Bazaar Terakhir
             </Button>
