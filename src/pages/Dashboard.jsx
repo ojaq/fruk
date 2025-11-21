@@ -10,7 +10,7 @@ const Dashboard = () => {
   const { user, applyAsAdmin, logout, profile, toggleProfileModal, registeredUsers, handleAdminDecision, cancelAdminRequest, bazaarData } = useAuth()
   const [isProfileEmpty, setIsProfileEmpty] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState(null)
-  
+
   const [adminView, setAdminView] = useState(() => {
     return localStorage.getItem('adminView') === 'false' ? false : true
   })
@@ -72,6 +72,10 @@ const Dashboard = () => {
 
   const handleBazaarManagement = () => {
     navigate(`/bazaar-management`)
+  }
+
+  const handleBazaarCharts = () => {
+    navigate(`/bazaar-charts`)
   }
 
   const checkProfileEmpty = (profileObj) => {
@@ -184,9 +188,9 @@ const Dashboard = () => {
                     })
                   }}
                 />
-                <Button 
-                  color="primary" 
-                  size="sm" 
+                <Button
+                  color="primary"
+                  size="sm"
                   onClick={handleViewSupplierData}
                   disabled={!selectedSupplier}
                 >
@@ -236,6 +240,11 @@ const Dashboard = () => {
             <li className="mb-2">Atur data dan masuk ke seluruh minggu: &nbsp;
               <Button color="primary" size="sm" className="ms-2" onClick={handleWeek}>
                 All Week
+              </Button>
+            </li>
+            <li className="mb-2">Cek data berbentuk grafik dari semua minggu di <strong>Bazaar Charts</strong>.
+              <Button color="primary" size="sm" className="ms-2" onClick={handleBazaarCharts}>
+                Bazaar Charts
               </Button>
             </li>
             <li className="mb-2">Lihat semua invoice dari semua minggu di <strong>All Customer Invoice</strong>.
@@ -327,6 +336,11 @@ const Dashboard = () => {
               </InputGroup>
               <Button color="primary" size="sm" className="ms-2" onClick={handleWeeklySupplierInvoice}>
                 Supplier Invoice Week {currentWeek}
+              </Button>
+            </li>
+            <li className="mb-2">Cek data berbentuk grafik dari semua minggu di <strong>Bazaar Charts</strong>.
+              <Button color="primary" size="sm" className="ms-2" onClick={handleBazaarCharts}>
+                Bazaar Charts
               </Button>
             </li>
             <li className="mb-2">Cek semua pesanan dari semua minggu di <strong>All Supplier Invoice</strong>.

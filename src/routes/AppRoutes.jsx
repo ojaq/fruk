@@ -15,6 +15,7 @@ import BazaarLogs from '../pages/BazaarLogs'
 import WeekLogs from '../pages/WeekLogs'
 import BazaarProducts from '../pages/BazaarProducts'
 import PrivateRoutes from './PrivateRoutes'
+import BazaarCharts from '../pages/BazaarCharts'
 
 const AppRoutes = () => {
   return (
@@ -118,6 +119,14 @@ const AppRoutes = () => {
         element={
           <PrivateRoutes>
             <WeekLogs />
+          </PrivateRoutes>
+        }
+      />
+      <Route
+        path="/bazaar-charts"
+        element={
+          <PrivateRoutes>
+            <BazaarCharts />
           </PrivateRoutes>
         }
       />
