@@ -668,7 +668,15 @@ const BazaarRegistration = () => {
                   options={announcementOptions}
                   value={announcementOptions.find(opt => opt.value === form.announcementId)}
                   onChange={opt => {
-                    setForm({ ...form, announcementId: opt.value, selectedProducts: [], selectedProductsOnline: [], selectedProductsOffline: [] })
+                    setForm({
+                      ...form,
+                      announcementId: opt.value,
+                      participateOnline: false,
+                      participateOffline: false,
+                      selectedProducts: [],
+                      selectedProductsOnline: [],
+                      selectedProductsOffline: []
+                    })
                     setSelectedAnnouncement(opt.data)
                   }}
                   placeholder="Pilih bazaar..."
@@ -920,31 +928,23 @@ const BazaarRegistration = () => {
                 let selectedProductsOnline = []
                 let selectedProductsOffline = []
 
-                // ---- REAL FIX ----
                 if (lastHasSeparate) {
                   if (allowOnline && allowOffline) {
-                    // both allowed → keep separate
                     selectedProductsOnline = last.selectedProductsOnline || []
                     selectedProductsOffline = last.selectedProductsOffline || []
                     selectedProducts = []
                   } else if (allowOnline && !allowOffline) {
-                    // only online allowed → move online products → selectedProducts
                     selectedProducts = last.selectedProductsOnline || []
                   } else if (!allowOnline && allowOffline) {
-                    // only offline allowed → move offline products → selectedProducts
                     selectedProducts = last.selectedProductsOffline || []
                   } else {
-                    // none allowed
                     selectedProducts = []
                   }
                 } else {
-                  // last was non-separate
                   if (allowOnline || allowOffline) {
                     selectedProducts = last.selectedProducts || []
                   }
                 }
-
-                // set form
                 setForm(f => ({
                   ...f,
                   participateOnline: allowOnline,
@@ -953,10 +953,7 @@ const BazaarRegistration = () => {
                   selectedProductsOnline,
                   selectedProductsOffline
                 }))
-
-                // update separateProducts
                 setSeparateProducts(allowOnline && allowOffline && lastHasSeparate)
-
                 if (!allowOnline || !allowOffline) {
                   Swal.fire(
                     'Beberapa mode tidak bisa digunakan',
