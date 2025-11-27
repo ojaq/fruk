@@ -15,6 +15,12 @@ const CustomerInvoice = () => {
   const [searchText, setSearchText] = useState('')
   const [selectedPemesan, setSelectedPemesan] = useState(null)
 
+  const highlightText = (text, search) => {
+    if (!search) return text
+    const regex = new RegExp(`(${search})`, 'gi')
+    return text.replace(regex, '<mark>$1</mark>')
+  }
+
   useEffect(() => {
     const raw = sheetNames.flatMap(name => weekData[name] || [])
     const map = {}
@@ -319,25 +325,65 @@ const CustomerInvoice = () => {
             <div className="overflow-auto" style={{ minHeight: 200 }}>
               <DataTable
                 columns={[
-                  { name: 'Produk', selector: row => `${row.produkLabel}${row.catatan ? ` (${row.catatan})` : ''}`, wrap: true },
-                  { name: 'Jumlah', selector: row => row.jumlah, wrap: true },
-                  { name: 'Harga Satuan', selector: row => {
-                    const unit = row.jumlah > 0 ? row.bayar / row.jumlah : 0
-                    if (!unit || unit <= 0) return '-'
-                    const adjustedValue = unit < 1000 ? unit * 1000 : unit
-                    return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
-                  }, wrap: true },
-                  { name: 'Total Bayar', selector: row => {
-                    const bayar = row.bayar
-                    if (!bayar || bayar <= 0) return '-'
-                    const adjustedValue = bayar < 1000 ? bayar * 1000 : bayar
-                    return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
-                  }, wrap: true }
+                  {
+                    name: 'Produk',
+                    cell: row => {
+                      const txt = `${row.produkLabel}${row.catatan ? ` (${row.catatan})` : ''}`
+                      return (
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: highlightText(txt, searchText)
+                          }}
+                        />
+                      )
+                    },
+                    wrap: true
+                  },
+                  {
+                    name: 'Jumlah',
+                    cell: row => (
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: highlightText(String(row.jumlah), searchText)
+                        }}
+                      />
+                    ),
+                    wrap: true
+                  },
+                  {
+                    name: 'Harga Satuan',
+                    cell: row => {
+                      const unit = row.jumlah > 0 ? row.bayar / row.jumlah : 0
+                      const adjusted = unit < 1000 ? unit * 1000 : unit
+                      const txt = adjusted > 0 ? `Rp${adjusted.toLocaleString('id-ID')}` : '-'
+                      return (
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: highlightText(txt, searchText)
+                          }}
+                        />
+                      )
+                    },
+                    wrap: true
+                  },
+                  {
+                    name: 'Total Bayar',
+                    cell: row => {
+                      const bayar = row.bayar
+                      const adjusted = bayar < 1000 ? bayar * 1000 : bayar
+                      const txt = adjusted > 0 ? `Rp${adjusted.toLocaleString('id-ID')}` : '-'
+                      return (
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: highlightText(txt, searchText)
+                          }}
+                        />
+                      )
+                    },
+                    wrap: true
+                  }
                 ]}
                 data={group.items}
-                pagination
-                paginationPerPage={10}
-                paginationRowsPerPageOptions={[10, 25, 50, 100]}
                 highlightOnHover
                 responsive
               />
