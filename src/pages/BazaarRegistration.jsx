@@ -198,9 +198,41 @@ const BazaarRegistration = () => {
 
       const maxSuppliersOnline = announcement.maxSuppliersOnline ?? 70
       const maxSuppliersOffline = announcement.maxSuppliersOffline ?? 40
-      const maxProducts = announcement.maxProductsPerSupplier || 3
+      const maxProductsOffline = announcement.maxProductsPerSupplier || 3
+      const maxProductsOnline = (announcement.maxProductsPerSupplier || 3) * 2
       let baseProductSetOnline = new Set()
       let baseProductSetOffline = new Set()
+      // Validate selected products against limits
+      if (separateProducts) {
+        if (participateOnline) {
+          const baseOnline = new Set((selectedProductsOnline || []).map(p => getDynamicBaseProduct(p.label, (selectedProductsOnline || []).map(x => x.label))))
+          if (baseOnline.size > maxProductsOnline) {
+            Swal.fire('Error', `Maksimum ${maxProductsOnline} produk utama untuk mode Online`, 'error')
+            setLoading(false)
+            return
+          }
+        }
+        if (participateOffline) {
+          const baseOffline = new Set((selectedProductsOffline || []).map(p => getDynamicBaseProduct(p.label, (selectedProductsOffline || []).map(x => x.label))))
+          if (baseOffline.size > maxProductsOffline) {
+            Swal.fire('Error', `Maksimum ${maxProductsOffline} produk utama untuk mode Offline`, 'error')
+            setLoading(false)
+            return
+          }
+        }
+      } else {
+        const baseAll = new Set((selectedProducts || []).map(p => getDynamicBaseProduct(p.label, (selectedProducts || []).map(x => x.label))))
+        let allowedMax = maxProductsOffline
+        if (participateOnline && !participateOffline) allowedMax = maxProductsOnline
+        else if (!participateOnline && participateOffline) allowedMax = maxProductsOffline
+        else if (participateOnline && participateOffline) allowedMax = Math.min(maxProductsOnline, maxProductsOffline)
+
+        if (baseAll.size > allowedMax) {
+          Swal.fire('Error', `Pilih maksimal ${allowedMax} produk utama sesuai mode partisipasi`, 'error')
+          setLoading(false)
+          return
+        }
+      }
       if (separateProducts) {
         if (participateOnline && selectedProductsOnline.length === 0) {
           Swal.fire('Error', 'Pilih produk untuk bazaar online!', 'error')
@@ -534,21 +566,21 @@ const BazaarRegistration = () => {
         const now = new Date()
         const canEditDelete = deadline && now <= deadline
         return (
-        <>
-          <Button size="sm" color="info" className="me-2" onClick={() => handleView(row)} disabled={loading}>
-            <Eye size={16} />
-          </Button>
+          <>
+            <Button size="sm" color="info" className="me-2" onClick={() => handleView(row)} disabled={loading}>
+              <Eye size={16} />
+            </Button>
             {canEditDelete && (
-            <>
-              <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
-                <Edit size={16} />
-              </Button>
-              <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
-                <Trash2 size={16} />
-              </Button>
-            </>
-          )}
-        </>
+              <>
+                <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row, i)} disabled={loading}>
+                  <Edit size={16} />
+                </Button>
+                <Button size="sm" color="danger" onClick={() => handleDelete(i)} disabled={loading}>
+                  <Trash2 size={16} />
+                </Button>
+              </>
+            )}
+          </>
         )
       },
       width: '200px',
@@ -573,12 +605,13 @@ const BazaarRegistration = () => {
   const currentAnnouncement = selectedAnnouncement || announcements.find(a => a.id === form.announcementId)
   const maxSuppliersOnline = currentAnnouncement?.maxSuppliersOnline ?? 70
   const maxSuppliersOffline = currentAnnouncement?.maxSuppliersOffline ?? 40
-  const maxProducts = currentAnnouncement?.maxProductsPerSupplier || 3
+  const maxProductsOffline = currentAnnouncement?.maxProductsPerSupplier || 3
+  const maxProductsOnline = (currentAnnouncement?.maxProductsPerSupplier || 3) * 2
   const baseProducts = form.selectedProducts.map(p => getDynamicBaseProduct(p.label, form.selectedProducts.map(x => x.label)))
   const uniqueBaseProducts = Array.from(new Set(baseProducts))
-  const isAtMaxProducts = uniqueBaseProducts.length >= maxProducts
+  const isAtMaxProducts = uniqueBaseProducts.length >= maxProductsOffline
 
-  const activeRegs = registrations.filter(r => r.announcementId === currentAnnouncement?.id && ['pending','approved'].includes(r.status))
+  const activeRegs = registrations.filter(r => r.announcementId === currentAnnouncement?.id && ['pending', 'approved'].includes(r.status))
 
   const onlineSuppliers = new Set(activeRegs.filter(r => r.participateOnline).map(r => r.supplierName))
   const offlineSuppliers = new Set(activeRegs.filter(r => r.participateOffline).map(r => r.supplierName))
@@ -767,27 +800,28 @@ const BazaarRegistration = () => {
                       options={userProducts}
                       value={form.selectedProductsOnline}
                       onChange={selected => {
-                        const jenisSet = new Set(selected.map(p => p.data.jenisProduk))
-                        if (jenisSet.size <= maxProducts) {
+                        const baseSet = new Set(selected.map(p => getDynamicBaseProduct(p.label, selected.map(x => x.label))))
+                        if (baseSet.size <= maxProductsOnline) {
                           setForm(f => ({ ...f, selectedProductsOnline: selected }))
                         }
                       }}
-                      placeholder={`Pilih produk untuk bazaar online (maks ${maxProducts} jenis produk, maksimal ${maxSuppliersOnline} supplier)`}
+                      placeholder={`Pilih produk untuk bazaar online (maks ${maxProductsOnline} produk utama, maksimal ${maxSuppliersOnline} supplier)`}
                       isDisabled={loading || !form.participateOnline || (onlineFull && !form.participateOnline)}
                     />
                     {(() => {
-                      const jenisSet = new Set(form.selectedProductsOnline.map(p => p.data.jenisProduk))
+                      const baseProductsOnline = form.selectedProductsOnline.map(p => getDynamicBaseProduct(p.label, form.selectedProductsOnline.map(x => x.label)))
+                      const uniqueBaseProductsOnline = Array.from(new Set(baseProductsOnline))
                       return (
-                        <small className={`${jenisSet.size >= maxProducts ? 'text-danger' : 'text-muted'}`}>
-                          Pilih produk untuk Bazaar Online (maks {maxProducts} jenis produk)
-                          {jenisSet.size > 0 && (
+                        <small className={`${uniqueBaseProductsOnline.length >= maxProductsOnline ? 'text-danger' : 'text-muted'}`}>
+                          Pilih produk untuk Bazaar Online (maks {maxProductsOnline} produk utama)
+                          {uniqueBaseProductsOnline.length > 0 && (
                             <span className="ms-2">
-                              ({jenisSet.size}/{maxProducts} jenis produk terpilih)
+                              ({uniqueBaseProductsOnline.length}/{maxProductsOnline} produk utama terpilih)
                             </span>
                           )}
-                          {form.selectedProductsOnline.length > jenisSet.size && (
+                          {form.selectedProductsOnline.length > uniqueBaseProductsOnline.length && (
                             <span className="ms-2 text-info">
-                              ({form.selectedProductsOnline.length - jenisSet.size} varian/variasi)
+                              ({form.selectedProductsOnline.length - uniqueBaseProductsOnline.length} varian/variasi)
                             </span>
                           )}
                         </small>
@@ -804,22 +838,22 @@ const BazaarRegistration = () => {
                       value={form.selectedProductsOffline}
                       onChange={selected => {
                         const baseSet = new Set(selected.map(p => getDynamicBaseProduct(p.label, selected.map(x => x.label))))
-                        if (baseSet.size <= maxProducts) {
+                        if (baseSet.size <= maxProductsOffline) {
                           setForm(f => ({ ...f, selectedProductsOffline: selected }))
                         }
                       }}
-                      placeholder={`Pilih produk untuk bazaar offline (maks ${maxProducts} produk utama, maksimal ${maxSuppliersOffline} supplier)`}
+                      placeholder={`Pilih produk untuk bazaar offline (maks ${maxProductsOffline} produk utama, maksimal ${maxSuppliersOffline} supplier)`}
                       isDisabled={loading || !form.participateOffline || (offlineFull && !form.participateOffline)}
                     />
                     {(() => {
                       const baseProductsOffline = form.selectedProductsOffline.map(p => getDynamicBaseProduct(p.label, form.selectedProductsOffline.map(x => x.label)))
                       const uniqueBaseProductsOffline = Array.from(new Set(baseProductsOffline))
                       return (
-                        <small className={`${uniqueBaseProductsOffline.length >= maxProducts ? 'text-danger' : 'text-muted'}`}>
-                          Pilih produk untuk Bazaar Offline (maks {maxProducts} produk utama)
+                        <small className={`${uniqueBaseProductsOffline.length >= maxProductsOffline ? 'text-danger' : 'text-muted'}`}>
+                          Pilih produk untuk Bazaar Offline (maks {maxProductsOffline} produk utama)
                           {uniqueBaseProductsOffline.length > 0 && (
                             <span className="ms-2">
-                              ({uniqueBaseProductsOffline.length}/{maxProducts} produk utama terpilih)
+                              ({uniqueBaseProductsOffline.length}/{maxProductsOffline} produk utama terpilih)
                             </span>
                           )}
                           {form.selectedProductsOffline.length > uniqueBaseProductsOffline.length && (
@@ -842,38 +876,46 @@ const BazaarRegistration = () => {
                     options={userProducts}
                     value={form.selectedProducts}
                     onChange={selected => {
-                      const jenisSet = new Set(selected.map(p => p.data.jenisProduk))
-                      if (jenisSet.size <= maxProducts) {
+                      const baseSet = new Set(selected.map(p => getDynamicBaseProduct(p.label, selected.map(x => x.label))))
+                      let allowedMax = maxProductsOffline
+                      if (form.participateOnline && !form.participateOffline) allowedMax = maxProductsOnline
+                      else if (!form.participateOnline && form.participateOffline) allowedMax = maxProductsOffline
+                      else if (form.participateOnline && form.participateOffline) allowedMax = Math.min(maxProductsOnline, maxProductsOffline)
+
+                      if (baseSet.size <= allowedMax) {
                         setForm(f => ({ ...f, selectedProducts: selected }))
                       }
                     }}
-                    placeholder={`Pilih produk yang akan dijual di bazaar ini (maks ${maxProducts} jenis produk, maksimal ${Math.max(maxSuppliersOnline, maxSuppliersOffline)} supplier)`}
+                    placeholder={`Pilih produk yang akan dijual di bazaar ini (maks ${form.participateOnline && !form.participateOffline ? maxProductsOnline : (!form.participateOnline && form.participateOffline ? maxProductsOffline : Math.min(maxProductsOnline, maxProductsOffline))} produk utama, maksimal ${Math.max(maxSuppliersOnline, maxSuppliersOffline)} supplier)`}
                     isDisabled={
                       loading ||
                       (!form.participateOnline && !form.participateOffline) ||
                       ((onlineFull && !form.participateOnline) && (offlineFull && !form.participateOffline))
                     }
                   />
-                  <small className={`${new Set(form.selectedProducts.map(p => p.data.jenisProduk)).size >= maxProducts ? 'text-danger' : 'text-muted'}`}>
-                    Pilih produk yang akan Anda jual di bazaar ini (maks {maxProducts} jenis produk)
-                    {(() => {
-                      const jenisSet = new Set(form.selectedProducts.map(p => p.data.jenisProduk))
-                      return (
-                        <>
-                          {jenisSet.size > 0 && (
-                            <span className="ms-2">
-                              ({jenisSet.size}/{maxProducts} jenis produk terpilih)
-                            </span>
-                          )}
-                          {form.selectedProducts.length > jenisSet.size && (
-                            <span className="ms-2 text-info">
-                              ({form.selectedProducts.length - jenisSet.size} varian/variasi)
-                            </span>
-                          )}
-                        </>
-                      )
-                    })()}
-                  </small>
+                  {(() => {
+                    const baseProducts = form.selectedProducts.map(p => getDynamicBaseProduct(p.label, form.selectedProducts.map(x => x.label)))
+                    const uniqueBaseProducts = Array.from(new Set(baseProducts))
+                    let allowedMax = maxProductsOffline
+                    if (form.participateOnline && !form.participateOffline) allowedMax = maxProductsOnline
+                    else if (!form.participateOnline && form.participateOffline) allowedMax = maxProductsOffline
+                    else if (form.participateOnline && form.participateOffline) allowedMax = Math.min(maxProductsOnline, maxProductsOffline)
+                    return (
+                      <small className={`${uniqueBaseProducts.length >= allowedMax ? 'text-danger' : 'text-muted'}`}>
+                        Pilih produk yang akan Anda jual di bazaar ini (maks {allowedMax} produk utama)
+                        {uniqueBaseProducts.length > 0 && (
+                          <span className="ms-2">
+                            ({uniqueBaseProducts.length}/{allowedMax} produk utama terpilih)
+                          </span>
+                        )}
+                        {form.selectedProducts.length > uniqueBaseProducts.length && (
+                          <span className="ms-2 text-info">
+                            ({form.selectedProducts.length - uniqueBaseProducts.length} varian/variasi)
+                          </span>
+                        )}
+                      </small>
+                    )
+                  })()}
                 </Col>
               </Row>
             )}
@@ -908,7 +950,7 @@ const BazaarRegistration = () => {
                 const maxOff = ann?.maxSuppliersOffline ?? 40
 
                 const regs = registrations.filter(
-                  r => r.announcementId === ann.id && ['pending','approved'].includes(r.status)
+                  r => r.announcementId === ann.id && ['pending', 'approved'].includes(r.status)
                 )
 
                 const onlineFullCurrent = regs.filter(r => r.participateOnline).length >= maxOn
@@ -1012,9 +1054,9 @@ const BazaarRegistration = () => {
                       <strong>Jumlah Produk:</strong><br />
                       {selectedRegistration.selectedProductsOnline?.length || selectedRegistration.selectedProductsOffline?.length
                         ? <>
-                            {selectedRegistration.selectedProductsOnline?.length > 0 && <span>Online: {selectedRegistration.selectedProductsOnline.length} </span>}
-                            {selectedRegistration.selectedProductsOffline?.length > 0 && <span>Offline: {selectedRegistration.selectedProductsOffline.length}</span>}
-                          </>
+                          {selectedRegistration.selectedProductsOnline?.length > 0 && <span>Online: {selectedRegistration.selectedProductsOnline.length} </span>}
+                          {selectedRegistration.selectedProductsOffline?.length > 0 && <span>Offline: {selectedRegistration.selectedProductsOffline.length}</span>}
+                        </>
                         : selectedRegistration.selectedProducts?.length || 0}
                     </Col>
                   </Row>
@@ -1024,22 +1066,22 @@ const BazaarRegistration = () => {
                       <ul className="mt-1">
                         {selectedRegistration.selectedProductsOnline?.length || selectedRegistration.selectedProductsOffline?.length
                           ? <>
-                              {selectedRegistration.selectedProductsOnline?.length > 0 && <>
-                                <li><strong>Online:</strong></li>
-                                {selectedRegistration.selectedProductsOnline.map((product, index) => (
-                                  <li key={"on-"+index} style={{marginLeft: 16}}>{product.label}</li>
-                                ))}
-                              </>}
-                              {selectedRegistration.selectedProductsOffline?.length > 0 && <>
-                                <li><strong>Offline:</strong></li>
-                                {selectedRegistration.selectedProductsOffline.map((product, index) => (
-                                  <li key={"off-"+index} style={{marginLeft: 16}}>{product.label}</li>
-                                ))}
-                              </>}
-                            </>
+                            {selectedRegistration.selectedProductsOnline?.length > 0 && <>
+                              <li><strong>Online:</strong></li>
+                              {selectedRegistration.selectedProductsOnline.map((product, index) => (
+                                <li key={"on-" + index} style={{ marginLeft: 16 }}>{product.label}</li>
+                              ))}
+                            </>}
+                            {selectedRegistration.selectedProductsOffline?.length > 0 && <>
+                              <li><strong>Offline:</strong></li>
+                              {selectedRegistration.selectedProductsOffline.map((product, index) => (
+                                <li key={"off-" + index} style={{ marginLeft: 16 }}>{product.label}</li>
+                              ))}
+                            </>}
+                          </>
                           : selectedRegistration.selectedProducts?.map((product, index) => (
-                              <li key={index}>{product.label}</li>
-                            ))}
+                            <li key={index}>{product.label}</li>
+                          ))}
                       </ul>
                     </Col>
                   </Row>
