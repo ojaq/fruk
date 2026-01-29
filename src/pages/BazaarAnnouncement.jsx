@@ -89,6 +89,10 @@ const BazaarAnnouncement = () => {
     num++
   }
 
+  if (form.weekId && !weekOptions.some(o => o.value === form.weekId)) {
+    weekOptions.unshift({ label: form.weekId, value: form.weekId })
+  }
+
   useEffect(() => {
     if (bazaarData) {
       setAnnouncements(bazaarData.announcements || [])
@@ -201,6 +205,7 @@ const BazaarAnnouncement = () => {
   const handleEdit = (row, index) => {
     setForm({
       ...row,
+      weekId: row.weekId || row.week || '',
       onlineDateStart: row.onlineDateStart || row.onlineDate || '',
       onlineDateEnd: row.onlineDateEnd || row.onlineDate || '',
       offlineDate: row.offlineDate || '',
