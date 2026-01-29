@@ -91,8 +91,8 @@ const BazaarCharts = () => {
   }, [weekData, selectedWeek])
 
   const normalized = useMemo(() => allRows.map(r => {
-    const jumlah = Number(r.jumlah) || 0
-    const bayar = parseMoney(r.bayar) || 0
+    const jumlah = Number(r?.jumlah) || 0
+    const bayar = parseMoney(r?.bayar) || 0
     return { ...r, jumlah, bayar }
   }), [allRows])
 

@@ -104,14 +104,14 @@ const BazaarRegistration = () => {
     const deadline = new Date(a.registrationDeadline)
     return now <= deadline
   })
-  const userRegistrations = registrations.filter(r => r.supplierName === supplierKey || r.supplierName === user?.name || r.supplierName === user?.profile?.namaSupplier)
+  const userRegistrations = registrations.filter(r => r?.supplierName === supplierKey || r?.supplierName === user?.name || r?.supplierName === user?.profile?.namaSupplier)
 
   const lastRegistration = userRegistrations.length > 0
     ? userRegistrations.reduce((a, b) => new Date(a.createdAt) > new Date(b.createdAt) ? a : b)
     : null
 
   const nonRejectedRegs = registrations.filter(
-    r => r.announcementId === form.announcementId && r.status !== 'rejected'
+    r => r?.announcementId === form.announcementId && r?.status !== 'rejected'
   )
   const productSupplierMap = {}
   nonRejectedRegs.forEach(reg => {
@@ -261,7 +261,7 @@ const BazaarRegistration = () => {
       }
 
       const existingRegistration = registrations.find(r =>
-        r.announcementId === announcementId && r.supplierName === supplierName && r.status !== 'rejected'
+        r?.announcementId === announcementId && r?.supplierName === supplierName && r?.status !== 'rejected'
       )
 
       if (existingRegistration && !editId) {
@@ -283,11 +283,11 @@ const BazaarRegistration = () => {
 
         const latestRegs = latest.registrations || []
         const activeRegs = latestRegs.filter(
-          r => r.announcementId === announcementId && ['pending', 'approved'].includes(r.status)
+          r => r?.announcementId === announcementId && ['pending', 'approved'].includes(r?.status)
         )
 
-        const onlineSuppliers = new Set(activeRegs.filter(r => r.participateOnline).map(r => r.supplierName))
-        const offlineSuppliers = new Set(activeRegs.filter(r => r.participateOffline).map(r => r.supplierName))
+        const onlineSuppliers = new Set(activeRegs.filter(r => r?.participateOnline).map(r => r?.supplierName))
+        const offlineSuppliers = new Set(activeRegs.filter(r => r?.participateOffline).map(r => r?.supplierName))
 
         const onlineFull = onlineSuppliers.size >= maxSuppliersOnline
         const offlineFull = offlineSuppliers.size >= maxSuppliersOffline
@@ -309,7 +309,7 @@ const BazaarRegistration = () => {
         participateOffline,
         notes,
         status: editId ? 'pending' : 'pending',
-        createdAt: editId ? (registrations.find(r => r.id === editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+        createdAt: editId ? (registrations.find(r => r?.id === editId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         selectedProducts: separateProducts ? [] : selectedProducts,
         selectedProductsOnline: separateProducts ? selectedProductsOnline : [],
@@ -319,7 +319,7 @@ const BazaarRegistration = () => {
       let isNew = false
       let previousRegistration = null
       if (editId) {
-        const idx = updated.findIndex(r => r.id === editId)
+        const idx = updated.findIndex(r => r?.id === editId)
         if (idx !== -1) {
           previousRegistration = updated[idx]
           updated[idx] = newRegistration
@@ -467,7 +467,7 @@ const BazaarRegistration = () => {
 
     setLoading(true)
     try {
-      const actualIndex = registrations.findIndex(r => r.id === row.id)
+      const actualIndex = registrations.findIndex(r => r?.id === row.id)
       if (actualIndex === -1) {
         Swal.fire('Error', 'Data tidak ditemukan', 'error')
         return
@@ -611,10 +611,10 @@ const BazaarRegistration = () => {
   const uniqueBaseProducts = Array.from(new Set(baseProducts))
   const isAtMaxProducts = uniqueBaseProducts.length >= maxProductsOffline
 
-  const activeRegs = registrations.filter(r => r.announcementId === currentAnnouncement?.id && ['pending', 'approved'].includes(r.status))
+  const activeRegs = registrations.filter(r => r?.announcementId === currentAnnouncement?.id && ['pending', 'approved'].includes(r?.status))
 
-  const onlineSuppliers = new Set(activeRegs.filter(r => r.participateOnline).map(r => r.supplierName))
-  const offlineSuppliers = new Set(activeRegs.filter(r => r.participateOffline).map(r => r.supplierName))
+  const onlineSuppliers = new Set(activeRegs.filter(r => r?.participateOnline).map(r => r?.supplierName))
+  const offlineSuppliers = new Set(activeRegs.filter(r => r?.participateOffline).map(r => r?.supplierName))
 
   const onlineFull = onlineSuppliers.size >= maxSuppliersOnline
   const offlineFull = offlineSuppliers.size >= maxSuppliersOffline
@@ -950,11 +950,11 @@ const BazaarRegistration = () => {
                 const maxOff = ann?.maxSuppliersOffline ?? 40
 
                 const regs = registrations.filter(
-                  r => r.announcementId === ann.id && ['pending', 'approved'].includes(r.status)
+                  r => r?.announcementId === ann.id && ['pending', 'approved'].includes(r?.status)
                 )
 
-                const onlineFullCurrent = regs.filter(r => r.participateOnline).length >= maxOn
-                const offlineFullCurrent = regs.filter(r => r.participateOffline).length >= maxOff
+                const onlineFullCurrent = regs.filter(r => r?.participateOnline).length >= maxOn
+                const offlineFullCurrent = regs.filter(r => r?.participateOffline).length >= maxOff
 
                 const last = lastRegistration
                 if (!last) return

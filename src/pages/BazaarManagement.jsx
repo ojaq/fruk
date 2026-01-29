@@ -82,13 +82,13 @@ const BazaarManagement = () => {
 
       const updated = [...registrations]
       if (editIndex !== null && editingRegistration) {
-        const actualIndex = registrations.findIndex(r => r.id === editingRegistration.id)
+        const actualIndex = registrations.findIndex(r => r?.id === editingRegistration?.id)
         if (actualIndex !== -1) {
           await logBazaarAction({
             user,
             action: 'edit',
             target: 'registration',
-            targetId: editingRegistration.id,
+            targetId: editingRegistration?.id,
             dataBefore: registrations[actualIndex],
             dataAfter: {
               ...registrations[actualIndex],
@@ -111,7 +111,7 @@ const BazaarManagement = () => {
             user,
             action: 'edit',
             target: 'registration',
-            targetId: editingRegistration.id,
+            targetId: editingRegistration?.id,
             dataBefore: updated[editIndex],
             dataAfter: {
               ...updated[editIndex],
@@ -153,10 +153,10 @@ const BazaarManagement = () => {
 
   const handleEdit = (row) => {
     setForm({
-      status: row.status,
-      adminNotes: row.adminNotes || ''
+      status: row?.status,
+      adminNotes: row?.adminNotes || ''
     })
-    const idx = registrations.findIndex(r => r.id === row.id)
+    const idx = registrations.findIndex(r => r?.id === row?.id)
     setEditIndex(idx)
     setEditingRegistration(row)
     setModalOpen(true)
@@ -178,10 +178,10 @@ const BazaarManagement = () => {
       let freshRegistrations = []
 
       for (const item of allBazaarData) {
-        const anns = item.data?.announcements || []
-        const regs = item.data?.registrations || []
+        const anns = item?.data?.announcements || []
+        const regs = item?.data?.registrations || []
 
-        const isMatched = anns.some(a => a.id === filterAnnouncement.value)
+        const isMatched = anns.some(a => a?.id === filterAnnouncement.value)
         if (isMatched) {
           freshRegistrations = regs
           break
@@ -198,7 +198,7 @@ const BazaarManagement = () => {
       if (error) throw new Error('Gagal mengambil log pendaftaran')
 
       const existingMap = new Set(
-        freshRegistrations.map(r => `${r.announcementId}|${r.supplierName}`)
+        freshRegistrations.map(r => `${r?.announcementId}|${r?.supplierName}`)
       )
 
       const seen = new Set()
@@ -215,7 +215,7 @@ const BazaarManagement = () => {
       }
 
       setMissingRegistrations(found)
-      setSelectedFixIds(new Set(found.map(r => r.id)))
+      setSelectedFixIds(new Set(found.map(r => r?.id)))
       setSelectedFixReg(null)
       setFixModalOpen(true)
     } catch (err) {
@@ -228,7 +228,7 @@ const BazaarManagement = () => {
 
   const handleAddMissingRegistrations = async () => {
     try {
-      const selectedData = missingRegistrations.filter(r => selectedFixIds.has(r.id))
+      const selectedData = missingRegistrations.filter(r => selectedFixIds.has(r?.id))
       const updated = [...registrations, ...selectedData]
       await saveBazaarData({ ...bazaarData, registrations: updated })
 
@@ -237,7 +237,7 @@ const BazaarManagement = () => {
           user,
           action: 'restore',
           target: 'registration',
-          targetId: reg.id,
+          targetId: reg?.id,
           dataBefore: null,
           dataAfter: reg,
           description: 'Restored missing registration via fixer tool'
@@ -272,13 +272,13 @@ const BazaarManagement = () => {
     setLoading(true)
     try {
       const updated = [...registrations]
-      const idx = registrations.findIndex(r => r.id === row.id)
+      const idx = registrations.findIndex(r => r?.id === row?.id)
       if (idx === -1) throw new Error('Registration not found')
       await logBazaarAction({
         user,
         action: 'edit',
         target: 'registration',
-        targetId: row.id,
+        targetId: row?.id,
         dataBefore: registrations[idx],
         dataAfter: {
           ...registrations[idx],
@@ -327,13 +327,13 @@ const BazaarManagement = () => {
     setLoading(true)
     try {
       const updated = [...registrations]
-      const idx = registrations.findIndex(r => r.id === row.id)
+      const idx = registrations.findIndex(r => r?.id === row?.id)
       if (idx === -1) throw new Error('Registration not found')
       await logBazaarAction({
         user,
         action: 'edit',
         target: 'registration',
-        targetId: row.id,
+        targetId: row?.id,
         dataBefore: registrations[idx],
         dataAfter: {
           ...registrations[idx],
@@ -376,7 +376,7 @@ const BazaarManagement = () => {
 
     setLoading(true)
     try {
-      const actualIndex = registrations.findIndex(r => r.id === row.id)
+      const actualIndex = registrations.findIndex(r => r?.id === row?.id)
       if (actualIndex === -1) {
         Swal.fire('Error', 'Data tidak ditemukan', 'error')
         return
@@ -385,7 +385,7 @@ const BazaarManagement = () => {
         user,
         action: 'delete',
         target: 'registration',
-        targetId: row.id,
+        targetId: row?.id,
         dataBefore: registrations[actualIndex],
         dataAfter: null,
         description: 'Delete registration'
@@ -414,8 +414,8 @@ const BazaarManagement = () => {
 
   const getParticipationBadge = (registration) => {
     const badges = []
-    if (registration.participateOnline) badges.push(<span key="online" className="badge bg-primary me-1">Online</span>)
-    if (registration.participateOffline) badges.push(<span key="offline" className="badge bg-info me-1">Offline</span>)
+    if (registration?.participateOnline) badges.push(<span key="online" className="badge bg-primary me-1">Online</span>)
+    if (registration?.participateOffline) badges.push(<span key="offline" className="badge bg-info me-1">Offline</span>)
     return badges
   }
 
@@ -428,14 +428,14 @@ const BazaarManagement = () => {
     },
     {
       name: 'Supplier',
-      selector: row => row.supplierName,
+      selector: row => row?.supplierName,
       sortable: true,
       wrap: true
     },
     {
       name: 'Bazaar',
       selector: row => {
-        const announcement = announcements.find(a => a.id === row.announcementId)
+        const announcement = announcements.find(a => a?.id === row?.announcementId)
         return announcement ? announcement.title : 'N/A'
       },
       sortable: true,
@@ -450,13 +450,13 @@ const BazaarManagement = () => {
     {
       name: 'Jumlah Produk',
       selector: row => {
-        if (row.selectedProductsOnline?.length || row.selectedProductsOffline?.length) {
+        if (row?.selectedProductsOnline?.length || row?.selectedProductsOffline?.length) {
           let count = 0
-          if (row.selectedProductsOnline) count += row.selectedProductsOnline.length
-          if (row.selectedProductsOffline) count += row.selectedProductsOffline.length
+          if (row?.selectedProductsOnline) count += row?.selectedProductsOnline.length
+          if (row?.selectedProductsOffline) count += row?.selectedProductsOffline.length
           return count
         }
-        return row.selectedProducts?.length || 0
+        return row?.selectedProducts?.length || 0
       },
       sortable: true,
       width: '150px',
@@ -464,13 +464,13 @@ const BazaarManagement = () => {
     },
     {
       name: 'Status',
-      cell: row => getStatusBadge(row.status),
+      cell: row => getStatusBadge(row?.status),
       width: '80px',
       wrap: true
     },
     {
       name: 'Tanggal Daftar',
-      selector: row => formatDateID(row.createdAt),
+      selector: row => formatDateID(row?.createdAt),
       sortable: true,
       width: '150px',
       wrap: true
@@ -485,7 +485,7 @@ const BazaarManagement = () => {
           <Button size="sm" color="warning" className="me-2" onClick={() => handleEdit(row)} disabled={loading}>
             <Edit size={16} />
           </Button>
-          {row.status === 'pending' && (
+          {row?.status === 'pending' && (
             <>
               <Button size="sm" color="success" className="me-2" onClick={() => handleQuickApprove(row)} disabled={loading}>
                 <Check size={16} />
@@ -507,7 +507,7 @@ const BazaarManagement = () => {
 
   const announcementOptions = announcements.map(a => ({
     label: a.title,
-    value: a.id
+    value: a?.id
   }))
 
   const statusOptions = [
@@ -517,28 +517,28 @@ const BazaarManagement = () => {
   ]
 
   const filteredData = registrations.filter(item => {
-    const announcement = announcements.find(a => a.id === item.announcementId)
+    const announcement = announcements.find(a => a?.id === item?.announcementId)
     const announcementTitle = announcement ? announcement.title : ''
     const matchSearch = announcementTitle.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.supplierName.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.notes?.toLowerCase().includes(searchText.toLowerCase())
-    const matchAnnouncement = filterAnnouncement ? item.announcementId === filterAnnouncement.value : true
-    const matchStatus = filterStatus ? item.status === filterStatus.value : true
+      item?.supplierName.toLowerCase().includes(searchText.toLowerCase()) ||
+      item?.notes?.toLowerCase().includes(searchText.toLowerCase())
+    const matchAnnouncement = filterAnnouncement ? item?.announcementId === filterAnnouncement.value : true
+    const matchStatus = filterStatus ? item?.status === filterStatus.value : true
     const matchParticipation =
       filterParticipation === 'all' ? true :
-      filterParticipation === 'online' ? item.participateOnline :
-      filterParticipation === 'offline' ? item.participateOffline : true
+        filterParticipation === 'online' ? item?.participateOnline :
+          filterParticipation === 'offline' ? item?.participateOffline : true
     return matchSearch && matchAnnouncement && matchStatus && matchParticipation
   })
 
   const stats = {
     total: filteredData.length,
-    pending: filteredData.filter(r => r.status === 'pending').length,
-    approved: filteredData.filter(r => r.status === 'approved').length,
-    rejected: filteredData.filter(r => r.status === 'rejected').length
+    pending: filteredData.filter(r => r?.status === 'pending').length,
+    approved: filteredData.filter(r => r?.status === 'approved').length,
+    rejected: filteredData.filter(r => r?.status === 'rejected').length
   }
-  const onlineCount = filteredData.filter(r => r.participateOnline).length
-  const offlineCount = filteredData.filter(r => r.participateOffline).length
+  const onlineCount = filteredData.filter(r => r?.participateOnline).length
+  const offlineCount = filteredData.filter(r => r?.participateOffline).length
 
   const handleExportCSV = () => {
     try {
@@ -563,18 +563,18 @@ const BazaarManagement = () => {
 
       const csvRows = [headers.join(',')]
 
-      filteredData.filter(r => r.status === 'approved').forEach(registration => {
-        const announcement = announcements.find(a => a.id === registration.announcementId)
+      filteredData.filter(r => r?.status === 'approved').forEach(registration => {
+        const announcement = announcements.find(a => a?.id === registration?.announcementId)
         const bazaarTitle = announcement ? announcement.title : 'N/A'
         const regInfo = [
-          registration.supplierName,
+          registration?.supplierName,
           bazaarTitle,
-          registration.participateOnline ? 'Ya' : 'Tidak',
-          registration.participateOffline ? 'Ya' : 'Tidak',
+          registration?.participateOnline ? 'Ya' : 'Tidak',
+          registration?.participateOffline ? 'Ya' : 'Tidak',
         ]
         const regTail = [
-          registration.notes || '',
-          registration.adminNotes || ''
+          registration?.notes || '',
+          registration?.adminNotes || ''
         ]
         const escapeCSV = (value) => {
           if (value === undefined || value === null) return ''
@@ -611,28 +611,28 @@ const BazaarManagement = () => {
             regTail[0], // Catatan Supplier
             regTail[1]  // Catatan Admin
           ]
-          csvRows.push(row.map(escapeCSV).join(','))
+          csvRows.push(row?.map(escapeCSV).join(','))
         }
         let hasProduct = false
-        if (registration.selectedProductsOnline && registration.selectedProductsOnline.length > 0) {
-          registration.selectedProductsOnline.forEach(product => {
+        if (registration?.selectedProductsOnline && registration?.selectedProductsOnline.length > 0) {
+          registration?.selectedProductsOnline.forEach(product => {
             pushProductRow(product, 'Online')
             hasProduct = true
           })
         }
-        if (registration.selectedProductsOffline && registration.selectedProductsOffline.length > 0) {
-          registration.selectedProductsOffline.forEach(product => {
+        if (registration?.selectedProductsOffline && registration?.selectedProductsOffline.length > 0) {
+          registration?.selectedProductsOffline.forEach(product => {
             pushProductRow(product, 'Offline')
             hasProduct = true
           })
         }
-        if (!hasProduct && registration.selectedProducts && registration.selectedProducts.length > 0) {
-          registration.selectedProducts.forEach(product => {
-            if (registration.participateOnline) {
+        if (!hasProduct && registration?.selectedProducts && registration?.selectedProducts.length > 0) {
+          registration?.selectedProducts.forEach(product => {
+            if (registration?.participateOnline) {
               pushProductRow(product, 'Online')
               hasProduct = true
             }
-            if (registration.participateOffline) {
+            if (registration?.participateOffline) {
               pushProductRow(product, 'Offline')
               hasProduct = true
             }
@@ -866,17 +866,17 @@ const BazaarManagement = () => {
                   <Row>
                     <Col xs="12" md="6">
                       <strong>Supplier:</strong><br />
-                      {selectedRegistration.supplierName}
+                      {selectedRegistration?.supplierName}
                     </Col>
                     <Col xs="12" md="6">
                       <strong>Status:</strong><br />
-                      {getStatusBadge(selectedRegistration.status)}
+                      {getStatusBadge(selectedRegistration?.status)}
                     </Col>
                   </Row>
                   <Row className="mt-2">
                     <Col xs="12" md="6">
                       <strong>Bazaar:</strong><br />
-                      {announcements.find(a => a.id === selectedRegistration.announcementId)?.title || 'N/A'}
+                      {announcements.find(a => a?.id === selectedRegistration?.announcementId)?.title || 'N/A'}
                     </Col>
                     <Col xs="12" md="6">
                       <strong>Partisipasi:</strong><br />
@@ -887,53 +887,53 @@ const BazaarManagement = () => {
                     <Col xs="12">
                       <strong>Produk yang Didaftarkan:</strong><br />
                       <ul className="mt-1">
-                        {selectedRegistration.selectedProductsOnline?.length || selectedRegistration.selectedProductsOffline?.length
+                        {selectedRegistration?.selectedProductsOnline?.length || selectedRegistration?.selectedProductsOffline?.length
                           ? <>
-                              {selectedRegistration.selectedProductsOnline?.length > 0 && <>
-                                <li><strong>Online:</strong></li>
-                                {selectedRegistration.selectedProductsOnline.map((product, index) => (
-                                  <li key={"on-"+index} style={{marginLeft: 16}}>{product.label}</li>
-                                ))}
-                              </>}
-                              {selectedRegistration.selectedProductsOffline?.length > 0 && <>
-                                <li><strong>Offline:</strong></li>
-                                {selectedRegistration.selectedProductsOffline.map((product, index) => (
-                                  <li key={"off-"+index} style={{marginLeft: 16}}>{product.label}</li>
-                                ))}
-                              </>}
-                            </>
-                          : selectedRegistration.selectedProducts?.map((product, index) => (
-                              <li key={index}>{product.label}</li>
-                            ))}
+                            {selectedRegistration?.selectedProductsOnline?.length > 0 && <>
+                              <li><strong>Online:</strong></li>
+                              {selectedRegistration?.selectedProductsOnline.map((product, index) => (
+                                <li key={"on-" + index} style={{ marginLeft: 16 }}>{product.label}</li>
+                              ))}
+                            </>}
+                            {selectedRegistration?.selectedProductsOffline?.length > 0 && <>
+                              <li><strong>Offline:</strong></li>
+                              {selectedRegistration?.selectedProductsOffline.map((product, index) => (
+                                <li key={"off-" + index} style={{ marginLeft: 16 }}>{product.label}</li>
+                              ))}
+                            </>}
+                          </>
+                          : selectedRegistration?.selectedProducts?.map((product, index) => (
+                            <li key={index}>{product.label}</li>
+                          ))}
                       </ul>
                     </Col>
                   </Row>
-                  {selectedRegistration.notes && (
+                  {selectedRegistration?.notes && (
                     <Row className="mt-2">
                       <Col xs="12">
                         <strong>Catatan Supplier:</strong><br />
-                        {selectedRegistration.notes}
+                        {selectedRegistration?.notes}
                       </Col>
                     </Row>
                   )}
-                  {selectedRegistration.adminNotes && (
+                  {selectedRegistration?.adminNotes && (
                     <Row className="mt-2">
                       <Col xs="12">
                         <strong>Catatan Admin:</strong><br />
-                        {selectedRegistration.adminNotes}
+                        {selectedRegistration?.adminNotes}
                       </Col>
                     </Row>
                   )}
                   <Row className="mt-2">
                     <Col xs="12" md="6">
                       <small className="text-muted">
-                        Didaftarkan pada: {formatDateTimeID(selectedRegistration.createdAt)}
+                        Didaftarkan pada: {formatDateTimeID(selectedRegistration?.createdAt)}
                       </small>
                     </Col>
-                    {selectedRegistration.reviewedBy && (
+                    {selectedRegistration?.reviewedBy && (
                       <Col xs="12" md="6">
                         <small className="text-muted">
-                          Direview oleh: {selectedRegistration.reviewedBy}
+                          Direview oleh: {selectedRegistration?.reviewedBy}
                         </small>
                       </Col>
                     )}
@@ -958,14 +958,14 @@ const BazaarManagement = () => {
               <p>Ditemukan <strong>{missingRegistrations.length}</strong> pendaftaran yang belum tercatat:</p>
               <ul className="list-unstyled">
                 {missingRegistrations.map((reg, i) => (
-                  <li key={reg.id} className="mb-2">
+                  <li key={reg?.id} className="mb-2">
                     <Input
                       type="checkbox"
-                      checked={selectedFixIds.has(reg.id)}
+                      checked={selectedFixIds.has(reg?.id)}
                       onChange={e => {
                         const copy = new Set(selectedFixIds)
-                        if (e.target.checked) copy.add(reg.id)
-                        else copy.delete(reg.id)
+                        if (e.target.checked) copy.add(reg?.id)
+                        else copy.delete(reg?.id)
                         setSelectedFixIds(copy)
                       }}
                       className="me-2"

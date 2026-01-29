@@ -33,12 +33,12 @@ const Week = () => {
     ? Object.keys(weekData)
       .filter(k => /^W\d+/.test(k))
       .flatMap(k => (weekData[k] || []).map(d => ({ ...d, week: k })))
-  : []
+    : []
 
   const uniquePemesanThisWeek = !isAllWeek ? [...new Set((weekData[sheetName] || []).map(d => d.pemesan))].sort((a, b) => a.localeCompare(b)) : []
 
   const currentAnnouncement = (bazaarData.announcements || []).find(a => a.weekId === sheetName && a.status === 'active')
-  const approvedRegs = (bazaarData.registrations || []).filter(r => r.announcementId === currentAnnouncement?.id && r.status === 'approved')
+  const approvedRegs = (bazaarData.registrations || []).filter(r => r?.announcementId === currentAnnouncement?.id && r?.status === 'approved')
   const allowedProducts = []
   approvedRegs.forEach(reg => {
     if (reg.participateOnline) {
@@ -400,15 +400,15 @@ const Week = () => {
 
   const columns = [
     { name: 'No', selector: (r, i) => i + 1, width: '60px', wrap: true },
-    ...(isAllWeek ? [{ name: 'Minggu', selector: r => r.week, wrap: true }] : []),
-    { name: 'Pemesan', selector: r => r.pemesan, wrap: true },
-    { name: 'Produk', selector: r => r.produkLabel, wrap: true },
-    { name: 'Catatan', selector: r => r.catatan || "-", wrap: true },
-    { name: 'Jumlah', selector: r => r.jumlah, wrap: true, width: "120px", },
+    ...(isAllWeek ? [{ name: 'Minggu', selector: r => r?.week, wrap: true }] : []),
+    { name: 'Pemesan', selector: r => r?.pemesan, wrap: true },
+    { name: 'Produk', selector: r => r?.produkLabel, wrap: true },
+    { name: 'Catatan', selector: r => r?.catatan || "-", wrap: true },
+    { name: 'Jumlah', selector: r => r?.jumlah, wrap: true, width: "120px", },
     {
       name: 'Total Bayar',
       selector: r => {
-        const bayar = parseFloat(r.bayar)
+        const bayar = parseFloat(r?.bayar)
         if (!bayar || bayar <= 0) return '-'
         const adjustedValue = bayar < 1000 ? bayar * 1000 : bayar
         return `Rp${adjustedValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
@@ -456,10 +456,10 @@ const Week = () => {
   }))
 
   const uniqueWeekOptions = isAllWeek
-  ? [...new Set(data.map(d => d.week))]
+    ? [...new Set(data.map(d => d.week))]
       .sort((a, b) => Number(a.replace('W', '')) - Number(b.replace('W', '')))
       .map(w => ({ label: w, value: w }))
-  : []
+    : []
 
   return (
     <div className="container-fluid mt-4 px-1 px-sm-3 px-md-5">

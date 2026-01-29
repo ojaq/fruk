@@ -27,7 +27,7 @@ const BazaarProducts = () => {
       return
     }
     setLoading(true)
-    const regs = (bazaarData.registrations || []).filter(r => r.announcementId === selectedAnnouncement.value && r.status === 'approved')
+    const regs = (bazaarData.registrations || []).filter(r => r?.announcementId === selectedAnnouncement.value && r?.status === 'approved')
     let allProducts = []
     regs.forEach(reg => {
       if ((participationFilter === 'all' || participationFilter === 'online') && reg.participateOnline) {
@@ -76,9 +76,9 @@ const BazaarProducts = () => {
   const filteredProducts = products.filter(item => {
     return (
       (item.supplierName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      (item.label || item.namaProduk || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (item.jenisProduk || '').toLowerCase().includes(searchText.toLowerCase()) ||
-      (item.keterangan || '').toLowerCase().includes(searchText.toLowerCase()))
+        (item.label || item.namaProduk || '').toLowerCase().includes(searchText.toLowerCase()) ||
+        (item.jenisProduk || '').toLowerCase().includes(searchText.toLowerCase()) ||
+        (item.keterangan || '').toLowerCase().includes(searchText.toLowerCase()))
     )
   })
   const supplierOptions = Array.from(new Set(filteredProducts.map(p => p.supplierName))).map(s => ({ label: s, value: s }))
@@ -111,7 +111,7 @@ const BazaarProducts = () => {
     },
     {
       name: 'Detail Produk',
-      selector: row => {return `${row.jenisProduk} ${row.ukuran} ${row.satuan}`},
+      selector: row => { return `${row.jenisProduk} ${row.ukuran} ${row.satuan}` },
       sortable: true,
       width: "200px",
       wrap: true

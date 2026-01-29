@@ -35,15 +35,15 @@ const SupplierInvoice = () => {
         items.forEach(item => {
           const label = `${item.namaProduk} ${item.ukuran} ${item.satuan}`.trim()
           if (label.trim() === produkKey.trim() && item.aktif)
-          if (label === produkKey && item.aktif) {
-            found = {
-              supplier: item.namaSupplier || user,
-              produk: label,
-              hpp: Number(item.hpp),
-              key: label,
-              catatan: item.catatan
+            if (label === produkKey && item.aktif) {
+              found = {
+                supplier: item.namaSupplier || user,
+                produk: label,
+                hpp: Number(item.hpp),
+                key: label,
+                catatan: item.catatan
+              }
             }
-          }
         })
       })
 
@@ -207,8 +207,8 @@ const SupplierInvoice = () => {
         u => u.profile?.namaSupplier?.trim().toLowerCase() === supplier.trim().toLowerCase()
       )
       const paymentLine = matchedUser?.profile
-      ? `Pembayaran dapat dilakukan melalui:\n${matchedUser.profile.namaBank?.toUpperCase() || '-'} - ${matchedUser.profile.noRekening || '-'}\n${matchedUser.profile.namaPenerima || '-'}`
-      : 'Pembayaran dapat dilakukan melalui:\n-'
+        ? `Pembayaran dapat dilakukan melalui:\n${matchedUser.profile.namaBank?.toUpperCase() || '-'} - ${matchedUser.profile.noRekening || '-'}\n${matchedUser.profile.namaPenerima || '-'}`
+        : 'Pembayaran dapat dilakukan melalui:\n-'
 
       doc.text(paymentLine, 15, finalY + 25)
 
@@ -320,10 +320,10 @@ const SupplierInvoice = () => {
     const matchSupplier = selectedSupplier ? group.supplier === selectedSupplier.value : true
     const matchSearch = searchText
       ? group.items.some(item =>
-          Object.values(item).some(val =>
-            String(val).toLowerCase().includes(searchText.toLowerCase())
-          )
+        Object.values(item).some(val =>
+          String(val).toLowerCase().includes(searchText.toLowerCase())
         )
+      )
       : true
 
     return matchSupplier && matchSearch
@@ -392,7 +392,7 @@ const SupplierInvoice = () => {
                     cell: r => (
                       <div
                         dangerouslySetInnerHTML={{
-                          __html: highlightText(r.produk || '', searchText)
+                          __html: highlightText(r?.produk || '', searchText)
                         }}
                       />
                     ),
@@ -403,7 +403,7 @@ const SupplierInvoice = () => {
                     cell: r => (
                       <div
                         dangerouslySetInnerHTML={{
-                          __html: highlightText(r.pemesanCombined || '', searchText)
+                          __html: highlightText(r?.pemesanCombined || '', searchText)
                         }}
                       />
                     ),
@@ -414,7 +414,7 @@ const SupplierInvoice = () => {
                     cell: r => (
                       <div
                         dangerouslySetInnerHTML={{
-                          __html: highlightText(String(r.jumlah), searchText)
+                          __html: highlightText(String(r?.jumlah), searchText)
                         }}
                       />
                     ),
@@ -423,7 +423,7 @@ const SupplierInvoice = () => {
                   {
                     name: 'Harga Satuan',
                     cell: r => {
-                      const hpp = parseFloat(r.hpp)
+                      const hpp = parseFloat(r?.hpp)
                       const adjusted = !hpp || hpp <= 0 ? '-' :
                         `Rp${(hpp < 1000 ? hpp * 1000 : hpp).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
 
@@ -440,7 +440,7 @@ const SupplierInvoice = () => {
                   {
                     name: 'Total Harga',
                     cell: r => {
-                      const total = parseFloat(r.total)
+                      const total = parseFloat(r?.total)
                       const adjusted = !total || total <= 0 ? '-' :
                         `Rp${(total < 1000 ? total * 1000 : total).toLocaleString('id-ID', { maximumFractionDigits: 0 })}`
 

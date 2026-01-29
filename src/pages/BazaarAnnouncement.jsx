@@ -339,7 +339,7 @@ const BazaarAnnouncement = () => {
   )
 
   const getParticipantLists = (announcementId) => {
-    const registrations = (bazaarData.registrations || []).filter(r => r.announcementId === announcementId && r.status === 'approved')
+    const registrations = (bazaarData.registrations || []).filter(r => r?.announcementId === announcementId && r?.status === 'approved')
     const online = []
     const offline = []
     registrations.forEach(reg => {

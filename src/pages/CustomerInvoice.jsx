@@ -43,8 +43,8 @@ const CustomerInvoice = () => {
 
     const byPemesan = {}
     arr.forEach(r => {
-      if (!byPemesan[r.pemesan]) byPemesan[r.pemesan] = []
-      byPemesan[r.pemesan].push(r)
+      if (!byPemesan[r?.pemesan]) byPemesan[r?.pemesan] = []
+      byPemesan[r?.pemesan].push(r)
     })
 
     setGrouped(Object.entries(byPemesan).map(([pemesan, list], i) => {
@@ -258,10 +258,10 @@ const CustomerInvoice = () => {
     const matchPemesan = selectedPemesan ? group.pemesan === selectedPemesan.value : true
     const matchSearch = searchText
       ? group.items.some(item =>
-          Object.values(item).some(val =>
-            String(val).toLowerCase().includes(searchText.toLowerCase())
-          )
+        Object.values(item).some(val =>
+          String(val).toLowerCase().includes(searchText.toLowerCase())
         )
+      )
       : true
 
     return matchPemesan && matchSearch

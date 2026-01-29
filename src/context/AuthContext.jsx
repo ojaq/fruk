@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
 
       if (data) {
         let clean = data
-        while (clean?.data && clean.data.id && clean.data.data) {
+        while (clean?.data && clean.data?.id && clean.data.data) {
           clean = clean.data
         }
         setBazaarData(clean?.data || clean)

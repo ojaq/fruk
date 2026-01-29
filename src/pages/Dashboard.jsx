@@ -97,7 +97,7 @@ const Dashboard = () => {
       value: u.name
     }))
 
-  const pendingRegistrations = (bazaarData?.registrations || []).filter(r => r.status === 'pending').length
+  const pendingRegistrations = (bazaarData?.registrations || []).filter(r => r?.status === 'pending').length
 
   let needsRegistration = false
   let unregisteredAnnouncements = []
@@ -105,18 +105,18 @@ const Dashboard = () => {
   if ((user.role === 'supplier') || (user.role === 'admin' && !adminView)) {
     const now = new Date()
     const activeAnnouncements = (bazaarData?.announcements || []).filter(a => {
-      if (a.status !== 'active') return false
+      if (a?.status !== 'active') return false
       if (!a.registrationDeadline) return true
       return new Date(a.registrationDeadline) > now
     })
     const myRegs = (bazaarData?.registrations || []).filter(
-      r => r.supplierName && r.supplierName.trim().toLowerCase() === user.name.trim().toLowerCase()
+      r => r?.supplierName && r?.supplierName.trim().toLowerCase() === user.name.trim().toLowerCase()
     )
     needsRegistration = activeAnnouncements.some(a => {
-      const reg = myRegs.find(r => r.announcementId === a.id)
+      const reg = myRegs.find(r => r?.announcementId === a.id)
       if (!reg) unregisteredAnnouncements.push(a)
-      else if (reg.status === 'rejected') rejectedAnnouncements.push(a)
-      return !reg || reg.status === 'rejected'
+      else if (reg?.status === 'rejected') rejectedAnnouncements.push(a)
+      return !reg || reg?.status === 'rejected'
     })
   }
 
@@ -424,7 +424,7 @@ const Dashboard = () => {
         fontSize: '0.9rem',
         color: '#888'
       }}>
-        Made by Abdur Razzaq - <Phone size="18" color="#05b729ff"/> 082125970813 - <Instagram size="18" color="#b9359eff"/> & <Linkedin size="18" color="#2535e3ff"/> abangojaq - <Mail size="18" color="#bc1313ff"/> abangojaq@gmail.com
+        Made by Abdur Razzaq - <Phone size="18" color="#05b729ff" /> 082125970813 - <Instagram size="18" color="#b9359eff" /> & <Linkedin size="18" color="#2535e3ff" /> abangojaq - <Mail size="18" color="#bc1313ff" /> abangojaq@gmail.com
       </div>
     </div>
   )
