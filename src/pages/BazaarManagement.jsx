@@ -57,8 +57,8 @@ const BazaarManagement = () => {
 
   useEffect(() => {
     if (bazaarData) {
-      setRegistrations(bazaarData.registrations || [])
-      setAnnouncements(bazaarData.announcements || [])
+      setRegistrations((bazaarData.registrations || []).filter(Boolean))
+      setAnnouncements((bazaarData.announcements || []).filter(Boolean))
     }
   }, [bazaarData])
 
@@ -505,8 +505,8 @@ const BazaarManagement = () => {
     }
   ]
 
-  const announcementOptions = announcements.map(a => ({
-    label: a.title,
+  const announcementOptions = (announcements || []).filter(Boolean).map(a => ({
+    label: a?.title || 'N/A',
     value: a?.id
   }))
 
@@ -516,12 +516,13 @@ const BazaarManagement = () => {
     { label: 'Ditolak', value: 'rejected' }
   ]
 
-  const filteredData = registrations.filter(item => {
-    const announcement = announcements.find(a => a?.id === item?.announcementId)
+  const filteredData = (registrations || []).filter(item => {
+    const announcement = (announcements || []).find(a => a?.id === item?.announcementId)
     const announcementTitle = announcement ? announcement.title : ''
-    const matchSearch = announcementTitle.toLowerCase().includes(searchText.toLowerCase()) ||
-      item?.supplierName.toLowerCase().includes(searchText.toLowerCase()) ||
-      item?.notes?.toLowerCase().includes(searchText.toLowerCase())
+    const loweredSearch = (searchText || '').toLowerCase()
+    const matchSearch = (announcementTitle || '').toLowerCase().includes(loweredSearch) ||
+      ((item?.supplierName || '').toLowerCase().includes(loweredSearch)) ||
+      ((item?.notes || '').toLowerCase().includes(loweredSearch))
     const matchAnnouncement = filterAnnouncement ? item?.announcementId === filterAnnouncement.value : true
     const matchStatus = filterStatus ? item?.status === filterStatus.value : true
     const matchParticipation =
