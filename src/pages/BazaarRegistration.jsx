@@ -199,8 +199,8 @@ const BazaarRegistration = () => {
       const maxSuppliersOnline = announcement.maxSuppliersOnline ?? 70
       const maxSuppliersOffline = announcement.maxSuppliersOffline ?? 40
       const maxProductsOffline = announcement.maxProductsPerSupplier || 3
-      // const maxProductsOnline = (announcement.maxProductsPerSupplier || 3) * 2
-      const maxProductsOnline = 8 //temporary
+      const maxProductsOnline = (announcement.maxProductsPerSupplier || 3) * 2
+      // const maxProductsOnline = 8 //temporary
       let baseProductSetOnline = new Set()
       let baseProductSetOffline = new Set()
       // Validate selected products against limits
@@ -607,8 +607,8 @@ const BazaarRegistration = () => {
   const maxSuppliersOnline = currentAnnouncement?.maxSuppliersOnline ?? 70
   const maxSuppliersOffline = currentAnnouncement?.maxSuppliersOffline ?? 40
   const maxProductsOffline = currentAnnouncement?.maxProductsPerSupplier || 3
-  // const maxProductsOnline = (currentAnnouncement?.maxProductsPerSupplier || 3) * 2
-  const maxProductsOnline = 8 //temporary
+  const maxProductsOnline = (currentAnnouncement?.maxProductsPerSupplier || 3) * 2
+  // const maxProductsOnline = 8 //temporary
   const baseProducts = form.selectedProducts.map(p => getDynamicBaseProduct(p.label, form.selectedProducts.map(x => x.label)))
   const uniqueBaseProducts = Array.from(new Set(baseProducts))
   const isAtMaxProducts = uniqueBaseProducts.length >= maxProductsOffline
