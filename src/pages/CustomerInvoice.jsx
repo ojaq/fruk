@@ -26,7 +26,7 @@ const CustomerInvoice = () => {
     const map = {}
 
     raw.forEach(row => {
-      const key = `${row.pemesan}|${row.produkLabel}|${row.keterangan}`
+      const key = `${row.pemesan}|${row.produkLabel}|${row.catatan}`
       const qty = Number(row.jumlah)
       const rawBayar = Number(row.bayar)
       const adjustedBayar = rawBayar > 0 && rawBayar < 1000 ? rawBayar * 1000 : rawBayar
